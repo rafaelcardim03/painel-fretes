@@ -16,7 +16,7 @@ import {
   Truck,
 } from "lucide-react";
 
-type BillingRow = { date: string; value: number; status: string; ctrc: string };
+type BillingRow = { date: string; value: number; status: string; ctrc: string; category?: "normal" | "complementar" };
 
 const sampleRows: BillingRow[] = [
   { date: "02/01/2026", value: 3211.44, status: "LIQUIDADO", ctrc: "MTX 005704-5" },
@@ -40,6 +40,8 @@ const fromIso = (date: string) => {
   return year && month && day ? `${day}/${month}/${year}` : "";
 };
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\uFEFF\u00A0]/g, " ").trim().toLowerCase();
+const complementaryTerms = ["complementar", "descarga", "veiculo dedicado", "estadia", "reembolso"];
+const isComplementary = (value: string) => { const normalized = normalize(value); return complementaryTerms.some((term) => normalized.includes(normalize(term))); };
 const parseValue = (value: string) => {
   const clean = value.replace(/\s/g, "").replace(/%/g, "");
   if (!clean) return 0;
@@ -70,7 +72,8 @@ const parseImported = (text: string): BillingRow[] => {
   const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido");
   const statusIndex = find("situacao_ctrc");
   const ctrcIndex = find("sigla_ctrc", "numero_ctrc");
-  return lines.slice(1).map((line) => { const cells = csvCells(line); return { date: cells[dateIndex] || "", value: parseValue(cells[valueIndex] || ""), status: (cells[statusIndex] || "").toUpperCase(), ctrc: cells[ctrcIndex] || "" }; }).filter((row) => row.date && row.value >= 0);
+  const bbIndex = 53;
+  return lines.slice(1).map((line) => { const cells = csvCells(line); const bbValue = `${cells[bbIndex] || ""} ${cells[bbIndex - 1] || ""}`; return { date: cells[dateIndex] || "", value: parseValue(cells[valueIndex] || ""), status: (cells[statusIndex] || "").toUpperCase(), ctrc: cells[ctrcIndex] || "", category: (isComplementary(bbValue) ? "complementar" : "normal") as "normal" | "complementar" }; }).filter((row) => row.date && row.value >= 0);
 };
 const businessDaysInMonth = (year: number, month: number) => {
   let total = 0; const days = new Date(year, month, 0).getDate();
@@ -98,6 +101,12 @@ export default function Faturamento() {
   const end = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
   const periodRows = useMemo(() => rows.filter((row) => row.status !== "CANCELADO" && row.status !== "CANCELADA" && toIso(row.date) >= start && toIso(row.date) <= end), [rows, start, end]);
   const total = periodRows.reduce((sum, row) => sum + row.value, 0);
+  const normalRows = periodRows.filter((row) => row.category !== "complementar");
+  const complementaryRows = periodRows.filter((row) => row.category === "complementar");
+  const normalTotal = normalRows.reduce((sum, row) => sum + row.value, 0);
+  const complementaryTotal = complementaryRows.reduce((sum, row) => sum + row.value, 0);
+  const normalShare = total ? (normalTotal / total) * 100 : 0;
+  const complementaryShare = total ? (complementaryTotal / total) * 100 : 0;
   const activeDates = new Set(periodRows.map((row) => row.date));
   const average = activeDates.size ? total / activeDates.size : 0;
   const startDate = new Date(`${start}T12:00:00`); const endDate = new Date(`${end}T12:00:00`);
@@ -121,6 +130,7 @@ export default function Faturamento() {
         <section className="period-filter"><div className="period-filter-heading"><div><div className="section-kicker"><CalendarDays size={14} /> COMPETÊNCIA MENSAL</div><h2>Selecione o mês do faturamento</h2></div><button type="button" className="text-action" onClick={resetPeriod}>Usar mês atual <ArrowRight size={14} /></button></div><div className="period-fields"><label>Mês de referência<input type="month" value={month} onChange={(event) => changeMonth(event.target.value)} /></label><div className="period-rule"><Check size={14} /> Janela fixa de 30 dias · CTs cancelados excluídos</div></div></section>
         {notice && <div className="notice"><Check size={16} /><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
         <section className="metrics-grid billing-metrics"><Metric icon={<ReceiptText size={18} />} label="Faturado no período" value={currency(total)} detail={`${number(periodRows.length)} CTs válidos no intervalo`} accent="#2784ff" /><Metric icon={<BarChart3 size={18} />} label="Média diária" value={currency(average)} detail={`${number(activeDates.size)} dia(s) com faturamento`} accent="#2ebd8a" /><Metric icon={<Target size={18} />} label="Meta diária" value={currency(dailyGoal)} detail={`${currency(goal)} ÷ ${businessDays} dias úteis`} accent="#e9a33a" /><Metric icon={<Clock3 size={18} />} label="Atingimento médio" value={`${progress.toFixed(0)}%`} detail={progress >= 100 ? "meta diária alcançada" : "comparado à meta diária"} accent="#8c78f4" /></section>
+        <section className="freight-split"><div className="freight-split-heading"><div><div className="section-kicker">COMPOSIÇÃO DO FATURAMENTO</div><h2>Frete normal x complementar</h2><p>Classificação pela coluna BB da planilha.</p></div><span className="split-rule">Complementar: complementar · descarga · veículo dedicado · estadia · reembolso</span></div><div className="split-cards"><div className="split-card normal"><div className="split-card-top"><span className="split-icon"><ReceiptText size={17} /></span><span className="split-title">Frete normal</span><strong>{normalShare.toFixed(1)}%</strong></div><div className="split-value">{currency(normalTotal)}</div><div className="split-detail">{number(normalRows.length)} CTs no mês selecionado</div><div className="split-track"><span style={{ width: `${normalShare}%` }} /></div></div><div className="split-card complementary"><div className="split-card-top"><span className="split-icon"><Target size={17} /></span><span className="split-title">Frete complementar</span><strong>{complementaryShare.toFixed(1)}%</strong></div><div className="split-value">{currency(complementaryTotal)}</div><div className="split-detail">{number(complementaryRows.length)} CTs identificados na coluna BB</div><div className="split-track"><span style={{ width: `${complementaryShare}%` }} /></div></div></div></section>
         <section className="billing-grid"><div className="billing-card"><div className="section-heading-row"><div><div className="section-kicker">EVOLUÇÃO DO PERÍODO</div><h2>Faturamento x meta diária</h2><p>Leitura rápida dos valores válidos por dia.</p></div><span className="legend"><i className="legend-blue" />Faturado <i className="legend-amber" />Meta</span></div><div className="chart-area">{Array.from({ length: Math.min(14, Math.max(calendarBusinessDays, activeDates.size, 1)) }, (_, index) => { const dayRows = periodRows.filter((row) => { const d = Number(row.date.split("/")[0]); return d === index + 1; }); const dayValue = dayRows.reduce((sum, row) => sum + row.value, 0); const height = total ? Math.max(8, (dayValue / Math.max(total / 3, dailyGoal || 1)) * 100) : 8; return <div className="chart-column" key={index}><div className="chart-value">{dayValue ? currency(dayValue).replace(",00", "").replace("R$ ", "") : "—"}</div><div className="chart-bars"><div className="bar-target" style={{ height: `${Math.min(100, dailyGoal ? 100 : 15)}%` }} /><div className="bar-real" style={{ height: `${Math.min(100, height)}%` }} /></div><span>dia {index + 1}</span></div>; })}</div><div className="chart-note"><span><i className="legend-blue" /> azul = faturado</span><span><i className="legend-amber" /> âmbar = referência da meta</span></div></div>
           <div className="insight-card"><div className="insight-icon"><BarChart3 size={19} /></div><div className="section-kicker">RESUMO DO PERÍODO</div><h3>{progress >= 100 ? "Ritmo acima da meta" : "Acompanhe o ritmo da operação"}</h3><p>Você faturou <strong>{currency(total)}</strong> no intervalo selecionado. A média dos dias com movimento está em <strong>{currency(average)}</strong>.</p><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><div className="progress-label"><span>Meta diária</span><strong>{progress.toFixed(0)}%</strong></div></div></section>
         <section className="meta-config" id="meta-config"><div className="meta-config-copy"><div className="next-step-symbol"><Settings2 size={21} /></div><div><div className="section-kicker">CONFIGURAÇÃO MÊS A MÊS</div><h2>Cadastre a meta de {month}</h2><p>Cada competência possui sua própria meta geral e quantidade de dias úteis. Ao trocar o mês, os valores salvos são carregados automaticamente.</p></div></div><div className="meta-fields"><label>Meta geral de {month} (R$)<input inputMode="decimal" value={goalInput} onChange={(event) => setGoalInput(event.target.value)} placeholder="100000" /></label><label>Dias úteis de {month}<input type="number" min="1" max="31" value={daysInput} onChange={(event) => setDaysInput(event.target.value)} /></label><button className="import-button" onClick={saveGoal}><Check size={16} /> Salvar meta do mês</button><button className="outline-action" onClick={useMonthDays}>Calcular mês <CalendarDays size={14} /></button></div><div className="meta-formula"><span>Fórmula aplicada</span><strong>{currency(goal)} ÷ {businessDays} dias úteis = <em>{currency(dailyGoal)} por dia</em></strong></div></section>

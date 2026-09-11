@@ -317,3 +317,28 @@ tbody tr:last-child td { border-bottom: 0; }
 .meta-formula em { color: #2475c9; font-style: normal; }
 @media (max-width: 900px) { .billing-grid { grid-template-columns: 1fr; } .period-rule { margin-left: 0; } }
 @media (max-width: 650px) { .period-fields { flex-wrap: wrap; align-items: end; } .period-dash { display: none; } .period-rule { flex-basis: 100%; } .period-filter-heading { align-items: flex-start; flex-direction: column; } .billing-grid { margin-top: 20px; } .meta-fields { padding-left: 0; flex-wrap: wrap; } .meta-fields label:first-child, .meta-fields label:nth-child(2) { width: calc(50% - 5px); } .meta-fields .import-button, .meta-fields .outline-action { flex: 1; } .meta-formula { padding-left: 0; flex-direction: column; align-items: flex-start; gap: 5px; } }
+
+.freight-split { background: #fff; border: 1px solid #e5eaf1; border-radius: 12px; padding: 18px 19px; margin-top: 17px; box-shadow: 0 8px 22px rgba(29,53,82,.03); }
+.freight-split-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; }
+.freight-split h2 { color: #294361; font-family: "Space Grotesk", sans-serif; font-size: 17px; letter-spacing: -.035em; margin-top: 6px; }
+.freight-split p { color: #8998aa; font-size: 10px; margin-top: 4px; }
+.split-rule { color: #8d9cac; background: #f7f9fc; border: 1px solid #e8edf3; border-radius: 6px; padding: 7px 9px; font-size: 8px; white-space: nowrap; }
+.split-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.split-card { padding: 14px 15px 12px; border-radius: 9px; border: 1px solid; }
+.split-card.normal { background: #f4f9ff; border-color: #d9eafa; }
+.split-card.complementary { background: #fff9ee; border-color: #f6e6c6; }
+.split-card-top { display: flex; align-items: center; gap: 8px; }
+.split-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
+.normal .split-icon { color: #277bd2; background: #dceefe; }
+.complementary .split-icon { color: #b57b22; background: #fcebc9; }
+.split-title { color: #536b85; font-size: 10px; font-weight: 700; flex: 1; }
+.split-card-top strong { font-family: "Space Grotesk", sans-serif; font-size: 13px; }
+.normal .split-card-top strong { color: #2679ce; }
+.complementary .split-card-top strong { color: #b57b22; }
+.split-value { font-family: "Space Grotesk", sans-serif; color: #294665; font-size: 22px; font-weight: 700; letter-spacing: -.04em; margin-top: 12px; }
+.split-detail { color: #8c9aaa; font-size: 9px; margin-top: 3px; }
+.split-track { height: 6px; border-radius: 8px; background: rgba(142,163,184,.18); margin-top: 12px; overflow: hidden; }
+.split-track span { display: block; height: 100%; min-width: 2px; border-radius: inherit; }
+.normal .split-track span { background: #378de2; }
+.complementary .split-track span { background: #e7a342; }
+@media (max-width: 760px) { .freight-split-heading { align-items: flex-start; flex-direction: column; } .split-rule { white-space: normal; line-height: 1.5; } .split-cards { grid-template-columns: 1fr; } }
