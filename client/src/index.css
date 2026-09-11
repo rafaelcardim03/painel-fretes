@@ -342,3 +342,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .normal .split-track span { background: #378de2; }
 .complementary .split-track span { background: #e7a342; }
 @media (max-width: 760px) { .freight-split-heading { align-items: flex-start; flex-direction: column; } .split-rule { white-space: normal; line-height: 1.5; } .split-cards { grid-template-columns: 1fr; } }
+
+.payer-select { height: 36px; min-width: 245px; border: 1px solid #dfe6ef; border-radius: 7px; padding: 0 30px 0 10px; color: #38516e; background: #fbfcfe; font-size: 11px; outline: none; }
+.payer-select:focus { border-color: #83b9ed; box-shadow: 0 0 0 3px rgba(45,126,219,.08); }
+@media (max-width: 650px) { .payer-select { min-width: 0; width: 100%; } }

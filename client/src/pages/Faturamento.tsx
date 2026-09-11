@@ -16,17 +16,17 @@ import {
   Truck,
 } from "lucide-react";
 
-type BillingRow = { date: string; value: number; status: string; ctrc: string; category?: "normal" | "complementar" };
+type BillingRow = { date: string; value: number; status: string; ctrc: string; payer: string; category?: "normal" | "complementar" };
 
 const sampleRows: BillingRow[] = [
-  { date: "02/01/2026", value: 3211.44, status: "LIQUIDADO", ctrc: "MTX 005704-5" },
-  { date: "02/01/2026", value: 3348.74, status: "LIQUIDADO", ctrc: "MTX 005705-3" },
-  { date: "02/01/2026", value: 3245.77, status: "LIQUIDADO", ctrc: "MTX 005706-1" },
-  { date: "02/01/2026", value: 3707.74, status: "LIQUIDADO", ctrc: "MTX 005707-0" },
-  { date: "02/01/2026", value: 4175.54, status: "LIQUIDADO", ctrc: "MTX 005708-8" },
-  { date: "02/01/2026", value: 4082.96, status: "LIQUIDADO", ctrc: "MTX 005709-6" },
-  { date: "02/01/2026", value: 4159.36, status: "LIQUIDADO", ctrc: "MTX 005710-0" },
-  { date: "02/01/2026", value: 30, status: "LIQUIDADO", ctrc: "MTX 005713-4" },
+  { date: "02/01/2026", value: 3211.44, status: "LIQUIDADO", ctrc: "MTX 005704-5", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 3348.74, status: "LIQUIDADO", ctrc: "MTX 005705-3", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 3245.77, status: "LIQUIDADO", ctrc: "MTX 005706-1", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 3707.74, status: "LIQUIDADO", ctrc: "MTX 005707-0", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 4175.54, status: "LIQUIDADO", ctrc: "MTX 005708-8", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 4082.96, status: "LIQUIDADO", ctrc: "MTX 005709-6", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 4159.36, status: "LIQUIDADO", ctrc: "MTX 005710-0", payer: "LOJAS EDMIL SA" },
+  { date: "02/01/2026", value: 30, status: "LIQUIDADO", ctrc: "MTX 005713-4", payer: "COMPANHIA BRASILEIRA DE DISTRI" },
 ];
 
 const currency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -72,8 +72,9 @@ const parseImported = (text: string): BillingRow[] => {
   const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido");
   const statusIndex = find("situacao_ctrc");
   const ctrcIndex = find("sigla_ctrc", "numero_ctrc");
+  const payerIndex = find("pagador_nome");
   const bbIndex = 53;
-  return lines.slice(1).map((line) => { const cells = csvCells(line); const bbValue = `${cells[bbIndex] || ""} ${cells[bbIndex - 1] || ""}`; return { date: cells[dateIndex] || "", value: parseValue(cells[valueIndex] || ""), status: (cells[statusIndex] || "").toUpperCase(), ctrc: cells[ctrcIndex] || "", category: (isComplementary(bbValue) ? "complementar" : "normal") as "normal" | "complementar" }; }).filter((row) => row.date && row.value >= 0);
+  return lines.slice(1).map((line) => { const cells = csvCells(line); const bbValue = `${cells[bbIndex] || ""} ${cells[bbIndex - 1] || ""}`; return { date: cells[dateIndex] || "", value: parseValue(cells[valueIndex] || ""), status: (cells[statusIndex] || "").toUpperCase(), ctrc: cells[ctrcIndex] || "", payer: cells[payerIndex] || "Não informado", category: (isComplementary(bbValue) ? "complementar" : "normal") as "normal" | "complementar" }; }).filter((row) => row.date && row.value >= 0);
 };
 const businessDaysInMonth = (year: number, month: number) => {
   let total = 0; const days = new Date(year, month, 0).getDate();
@@ -88,6 +89,7 @@ function Metric({ icon, label, value, detail, accent }: { icon: React.ReactNode;
 export default function Faturamento() {
   const [rows, setRows] = useState<BillingRow[]>(() => { try { const saved = localStorage.getItem("rotaclara-csv"); return saved ? parseImported(saved) : sampleRows; } catch { return sampleRows; } });
   const [month, setMonth] = useState("2026-01");
+  const [payer, setPayer] = useState("todos");
   const [goal, setGoal] = useState(() => { try { const goals = JSON.parse(localStorage.getItem("rotaclara-monthly-goals") || "{}"); return Number(goals["2026-01"]?.goal || 100000); } catch { return 100000; } });
   const [businessDays, setBusinessDays] = useState(() => { try { const goals = JSON.parse(localStorage.getItem("rotaclara-monthly-goals") || "{}"); return Number(goals["2026-01"]?.days || 22); } catch { return 22; } });
   const [goalInput, setGoalInput] = useState(String(goal));
@@ -99,7 +101,8 @@ export default function Faturamento() {
   const [year, monthNumber] = month.split("-").map(Number);
   const start = `${month}-01`;
   const end = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
-  const periodRows = useMemo(() => rows.filter((row) => row.status !== "CANCELADO" && row.status !== "CANCELADA" && toIso(row.date) >= start && toIso(row.date) <= end), [rows, start, end]);
+  const payers = useMemo(() => Array.from(new Set(rows.map((row) => row.payer).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
+  const periodRows = useMemo(() => rows.filter((row) => row.status !== "CANCELADO" && row.status !== "CANCELADA" && toIso(row.date) >= start && toIso(row.date) <= end && (payer === "todos" || row.payer === payer)), [rows, start, end, payer]);
   const total = periodRows.reduce((sum, row) => sum + row.value, 0);
   const normalRows = periodRows.filter((row) => row.category !== "complementar");
   const complementaryRows = periodRows.filter((row) => row.category === "complementar");
@@ -115,7 +118,7 @@ export default function Faturamento() {
 
   const saveGoal = () => { const nextGoal = parseValue(goalInput); const nextDays = Math.max(1, Number(daysInput) || 1); const goals = JSON.parse(localStorage.getItem("rotaclara-monthly-goals") || "{}"); goals[month] = { goal: nextGoal, days: nextDays }; localStorage.setItem("rotaclara-monthly-goals", JSON.stringify(goals)); setGoal(nextGoal); setBusinessDays(nextDays); setNotice(`Meta de ${month} salva com sucesso.`); };
   const useMonthDays = () => { const days = businessDaysInMonth(year, monthNumber); setBusinessDays(days); setDaysInput(String(days)); setNotice(`${days} dias úteis calculados para o mês selecionado.`); };
-  const changeMonth = (nextMonth: string) => { setMonth(nextMonth); try { const goals = JSON.parse(localStorage.getItem("rotaclara-monthly-goals") || "{}"); const saved = goals[nextMonth]; const [nextYear, nextMonthNumber] = nextMonth.split("-").map(Number); const nextDays = Number(saved?.days || businessDaysInMonth(nextYear, nextMonthNumber)); const nextGoal = Number(saved?.goal || 100000); setGoal(nextGoal); setBusinessDays(nextDays); setGoalInput(String(nextGoal)); setDaysInput(String(nextDays)); } catch { /* mantém os valores atuais */ } };
+  const changeMonth = (nextMonth: string) => { setMonth(nextMonth); setPayer("todos"); try { const goals = JSON.parse(localStorage.getItem("rotaclara-monthly-goals") || "{}"); const saved = goals[nextMonth]; const [nextYear, nextMonthNumber] = nextMonth.split("-").map(Number); const nextDays = Number(saved?.days || businessDaysInMonth(nextYear, nextMonthNumber)); const nextGoal = Number(saved?.goal || 100000); setGoal(nextGoal); setBusinessDays(nextDays); setGoalInput(String(nextGoal)); setDaysInput(String(nextDays)); } catch { /* mantém os valores atuais */ } };
   const resetPeriod = () => { const now = new Date(); changeMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`); setNotice("Mês atual selecionado."); };
 
   return <div className="app-shell">
@@ -127,7 +130,7 @@ export default function Faturamento() {
     </aside>
     <main className="main-content"><header className="topbar"><div className="breadcrumbs"><span>Operação</span><span className="crumb-separator">/</span><strong>Faturamento</strong></div><div className="topbar-actions"><span className="last-sync"><span className="sync-dot" /> Base local · agora</span><button className="topbar-help" onClick={() => setNotice("O faturamento considera somente CTs cuja coluna H seja diferente de CANCELADO.")}><CircleHelp size={17} /></button><button className="topbar-avatar">RC</button></div></header>
       <div className="content-wrap"><section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> CONTROLE FINANCEIRO</div><h1>Faturamento em <em>foco.</em></h1><p>Veja quanto foi faturado, acompanhe a média e compare com sua meta diária.</p></div><div className="heading-meta"><span className="file-pill"><FileSpreadsheet size={13} /> {rows.length.toLocaleString("pt-BR")} CTs na base</span></div></section>
-        <section className="period-filter"><div className="period-filter-heading"><div><div className="section-kicker"><CalendarDays size={14} /> COMPETÊNCIA MENSAL</div><h2>Selecione o mês do faturamento</h2></div><button type="button" className="text-action" onClick={resetPeriod}>Usar mês atual <ArrowRight size={14} /></button></div><div className="period-fields"><label>Mês de referência<input type="month" value={month} onChange={(event) => changeMonth(event.target.value)} /></label><div className="period-rule"><Check size={14} /> Janela fixa de 30 dias · CTs cancelados excluídos</div></div></section>
+        <section className="period-filter"><div className="period-filter-heading"><div><div className="section-kicker"><CalendarDays size={14} /> COMPETÊNCIA MENSAL</div><h2>Selecione o mês e o cliente pagador</h2></div><button type="button" className="text-action" onClick={resetPeriod}>Usar mês atual <ArrowRight size={14} /></button></div><div className="period-fields"><label>Mês de referência<input type="month" value={month} onChange={(event) => changeMonth(event.target.value)} /></label><label>Cliente pagador<select className="payer-select" value={payer} onChange={(event) => setPayer(event.target.value)}><option value="todos">Todos os pagadores</option>{payers.map((name) => <option key={name} value={name}>{name}</option>)}</select></label><div className="period-rule"><Check size={14} /> Janela fixa de 30 dias · CTs cancelados excluídos</div></div></section>
         {notice && <div className="notice"><Check size={16} /><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
         <section className="metrics-grid billing-metrics"><Metric icon={<ReceiptText size={18} />} label="Faturado no período" value={currency(total)} detail={`${number(periodRows.length)} CTs válidos no intervalo`} accent="#2784ff" /><Metric icon={<BarChart3 size={18} />} label="Média diária" value={currency(average)} detail={`${number(activeDates.size)} dia(s) com faturamento`} accent="#2ebd8a" /><Metric icon={<Target size={18} />} label="Meta diária" value={currency(dailyGoal)} detail={`${currency(goal)} ÷ ${businessDays} dias úteis`} accent="#e9a33a" /><Metric icon={<Clock3 size={18} />} label="Atingimento médio" value={`${progress.toFixed(0)}%`} detail={progress >= 100 ? "meta diária alcançada" : "comparado à meta diária"} accent="#8c78f4" /></section>
         <section className="freight-split"><div className="freight-split-heading"><div><div className="section-kicker">COMPOSIÇÃO DO FATURAMENTO</div><h2>Frete normal x complementar</h2><p>Classificação pela coluna BB da planilha.</p></div><span className="split-rule">Complementar: complementar · descarga · veículo dedicado · estadia · reembolso</span></div><div className="split-cards"><div className="split-card normal"><div className="split-card-top"><span className="split-icon"><ReceiptText size={17} /></span><span className="split-title">Frete normal</span><strong>{normalShare.toFixed(1)}%</strong></div><div className="split-value">{currency(normalTotal)}</div><div className="split-detail">{number(normalRows.length)} CTs no mês selecionado</div><div className="split-track"><span style={{ width: `${normalShare}%` }} /></div></div><div className="split-card complementary"><div className="split-card-top"><span className="split-icon"><Target size={17} /></span><span className="split-title">Frete complementar</span><strong>{complementaryShare.toFixed(1)}%</strong></div><div className="split-value">{currency(complementaryTotal)}</div><div className="split-detail">{number(complementaryRows.length)} CTs identificados na coluna BB</div><div className="split-track"><span style={{ width: `${complementaryShare}%` }} /></div></div></div></section>
