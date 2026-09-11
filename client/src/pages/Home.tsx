@@ -441,6 +441,9 @@ export default function Home() {
           <button className={activeSection === "Faturamento" ? "nav-item active" : "nav-item"} onClick={() => window.location.href = "/faturamento"}>
             <ArrowDownUp size={17} /><span>Faturamento</span><span className="nav-pip" />
           </button>
+          <button className={activeSection === "Operações com frota" ? "nav-item active" : "nav-item"} onClick={() => window.location.href = "/frota"}>
+            <Truck size={17} /><span>Operações com frota</span><span className="nav-pip" />
+          </button>
         </nav>
 
         <div className="sidebar-label sidebar-label-later">Em breve</div>
