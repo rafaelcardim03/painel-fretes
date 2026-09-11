@@ -262,3 +262,58 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Faturamento */
+.period-filter { background: #fff; border: 1px solid #e4eaf2; border-radius: 13px; padding: 18px 20px; box-shadow: 0 8px 22px rgba(29,53,82,.03); }
+.period-filter-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.period-filter h2 { color: #294361; font-family: "Space Grotesk", sans-serif; font-size: 15px; letter-spacing: -.025em; margin-top: 6px; }
+.period-filter .section-kicker { color: #7190b3; }
+.period-filter .section-kicker svg { color: #2b80e8; }
+.text-action { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #2878c7; font-size: 10px; font-weight: 700; }
+.period-fields { display: flex; align-items: end; gap: 12px; margin-top: 17px; }
+.period-fields label, .meta-fields label { display: flex; flex-direction: column; gap: 6px; color: #8292a5; font-size: 9px; font-weight: 700; }
+.period-fields input, .meta-fields input { height: 36px; border: 1px solid #dfe6ef; border-radius: 7px; padding: 0 10px; color: #38516e; background: #fbfcfe; font-size: 11px; outline: none; }
+.period-fields input:focus, .meta-fields input:focus { border-color: #83b9ed; box-shadow: 0 0 0 3px rgba(45,126,219,.08); }
+.period-dash { color: #a2afbd; font-size: 10px; padding-bottom: 11px; }
+.period-rule { display: flex; align-items: center; gap: 6px; color: #278a68; background: #effaf5; border: 1px solid #d8f0e4; border-radius: 7px; padding: 9px 11px; font-size: 9px; margin: 0 0 0 auto; height: 36px; }
+.period-rule svg { color: #2db587; }
+.billing-metrics { margin-top: 16px; }
+.billing-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, .75fr); gap: 14px; margin-top: 27px; }
+.billing-card, .insight-card { background: #fff; border: 1px solid #e5eaf1; border-radius: 12px; box-shadow: 0 8px 22px rgba(29,53,82,.03); }
+.billing-card { padding: 19px 19px 13px; }
+.billing-card .section-heading-row { margin-bottom: 5px; }
+.legend { display: flex; align-items: center; gap: 7px; color: #8191a4; font-size: 9px; white-space: nowrap; }
+.legend i, .chart-note i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; }
+.legend-blue { background: #3188e6; }
+.legend-amber { background: #e5a33a; }
+.chart-area { display: flex; align-items: end; justify-content: space-around; gap: 7px; height: 186px; padding: 28px 3px 0; border-bottom: 1px solid #edf1f5; background: repeating-linear-gradient(to top, transparent 0, transparent 45px, #f1f4f8 46px); }
+.chart-column { height: 100%; flex: 1; min-width: 25px; display: flex; flex-direction: column; justify-content: end; align-items: center; gap: 6px; }
+.chart-column > span { color: #9aa7b6; font-size: 8px; white-space: nowrap; }
+.chart-value { color: #5a6d85; font-size: 8px; min-height: 11px; white-space: nowrap; }
+.chart-bars { height: 130px; width: 100%; max-width: 28px; display: flex; align-items: end; justify-content: center; gap: 3px; position: relative; }
+.bar-target { width: 8px; background: #f7d9a8; border-radius: 3px 3px 0 0; position: absolute; bottom: 0; left: 2px; opacity: .7; }
+.bar-real { width: 13px; background: linear-gradient(to top, #2376d4, #6eafea); border-radius: 4px 4px 0 0; position: absolute; bottom: 0; right: 1px; min-height: 5px; }
+.chart-note { display: flex; gap: 18px; color: #9aa7b6; font-size: 9px; padding-top: 11px; }
+.chart-note span { display: inline-flex; align-items: center; gap: 6px; }
+.insight-card { padding: 21px 19px; background: linear-gradient(145deg, #f2f8ff, #fff); }
+.insight-icon { width: 39px; height: 39px; border-radius: 10px; display: grid; place-items: center; color: #287bd2; background: #deefff; margin-bottom: 19px; }
+.insight-card h3 { color: #294665; font-family: "Space Grotesk", sans-serif; font-size: 17px; letter-spacing: -.03em; margin-top: 7px; }
+.insight-card p { color: #8494a8; font-size: 10px; line-height: 1.65; margin-top: 10px; }
+.insight-card p strong { color: #3e5975; }
+.progress-track { height: 8px; border-radius: 9px; background: #e3ebf4; margin-top: 24px; overflow: hidden; }
+.progress-track span { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: linear-gradient(90deg, #3188e6, #55b9e9); }
+.progress-label { display: flex; justify-content: space-between; color: #8c9aab; font-size: 9px; margin-top: 8px; }
+.progress-label strong { color: #2676c8; }
+.meta-config { background: #edf7ff; border: 1px solid #d8eafa; border-radius: 12px; padding: 17px 19px; margin-top: 25px; }
+.meta-config-copy { display: flex; align-items: center; gap: 14px; }
+.meta-config h2 { color: #294665; font-family: "Space Grotesk", sans-serif; font-size: 16px; letter-spacing: -.03em; margin-top: 5px; }
+.meta-config p { color: #8196ad; font-size: 10px; margin-top: 5px; line-height: 1.5; }
+.meta-fields { display: flex; align-items: end; gap: 10px; margin-top: 16px; padding-left: 53px; }
+.meta-fields label:first-child { width: 175px; }
+.meta-fields label:nth-child(2) { width: 145px; }
+.meta-fields .import-button, .meta-fields .outline-action { height: 36px; padding: 0 12px; font-size: 10px; box-shadow: none; }
+.meta-formula { display: flex; align-items: center; gap: 10px; border-top: 1px solid #dcebf8; margin-top: 16px; padding: 12px 0 0 53px; color: #8ba0b6; font-size: 9px; }
+.meta-formula strong { color: #496886; font-size: 10px; font-weight: 700; }
+.meta-formula em { color: #2475c9; font-style: normal; }
+@media (max-width: 900px) { .billing-grid { grid-template-columns: 1fr; } .period-rule { margin-left: 0; } }
+@media (max-width: 650px) { .period-fields { flex-wrap: wrap; align-items: end; } .period-dash { display: none; } .period-rule { flex-basis: 100%; } .period-filter-heading { align-items: flex-start; flex-direction: column; } .billing-grid { margin-top: 20px; } .meta-fields { padding-left: 0; flex-wrap: wrap; } .meta-fields label:first-child, .meta-fields label:nth-child(2) { width: calc(50% - 5px); } .meta-fields .import-button, .meta-fields .outline-action { flex: 1; } .meta-formula { padding-left: 0; flex-direction: column; align-items: flex-start; gap: 5px; } }

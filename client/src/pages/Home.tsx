@@ -391,6 +391,7 @@ export default function Home() {
         const parsed = parseRows(String(reader.result ?? ""));
         if (!parsed.length) throw new Error("empty");
         setFreights(parsed);
+        localStorage.setItem("rotaclara-csv", String(reader.result ?? ""));
         setFileName(`${file.name} · ${parsed.length.toLocaleString("pt-BR")} registros`);
         setNotice("Importação concluída. A visão geral foi atualizada com o novo arquivo.");
         setSearch("");
@@ -436,6 +437,9 @@ export default function Home() {
           </button>
           <button className={activeSection === "Relatórios" ? "nav-item active" : "nav-item"} onClick={() => openSoon("Relatórios")}>
             <ReceiptText size={17} /><span>Relatórios</span><span className="soon-dot" />
+          </button>
+          <button className={activeSection === "Faturamento" ? "nav-item active" : "nav-item"} onClick={() => window.location.href = "/faturamento"}>
+            <ArrowDownUp size={17} /><span>Faturamento</span><span className="nav-pip" />
           </button>
         </nav>
 
