@@ -424,7 +424,7 @@ export default function Home() {
           </div>
         </div>
 
-        <nav className="sidebar-nav sidebar-nav-compact"><button className="nav-item" onClick={() => window.location.href = "/faturamento"}><BarChart3 size={17} /><span>Faturamento</span></button><button className="nav-item" onClick={() => window.location.href = "/frota"}><Truck size={17} /><span>Operações com frota</span></button></nav></aside>
+        <nav className="sidebar-nav sidebar-nav-compact"><button className="nav-item" onClick={() => window.location.href = "/faturamento"}><BarChart3 size={17} /><span>Faturamento</span></button><button className="nav-item" onClick={() => window.location.href = "/frota"}><Truck size={17} /><span>Operações com frota</span></button><button className="nav-item" onClick={() => window.location.href = "/agregados"}><span className="nav-text-icon">▦</span><span>Agregados</span></button></nav></aside>
 
       <main className="main-content">
         <header className="topbar">
