@@ -537,3 +537,18 @@ tbody tr:last-child td { border-bottom: 0; }
 .aggregate-result-charts .bar-labels { gap: 2px; font-size: 6px; }
 
 @media (max-width: 850px) { .aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: auto; } }
+
+/* Agregados: gráficos em sequência vertical, com leitura ampliada dos meses e valores. */
+.aggregate-result-charts { grid-template-columns: 1fr; gap: 20px; }
+.aggregate-result-charts .monthly-profit-card, .aggregate-result-charts .monthly-bars-card { min-height: 500px; }
+.aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { min-height: 365px; gap: 12px; padding-left: 18px; padding-right: 18px; overflow-x: hidden; }
+.aggregate-result-charts .monthly-bar-group, .aggregate-result-charts .profit-month-group { min-width: 72px; }
+.aggregate-result-charts .bar-value-row { height: 250px; gap: 5px; }
+.aggregate-result-charts .bar-value-row span, .aggregate-result-charts .bar-value-row i { width: 28px; }
+.aggregate-result-charts .bar-labels { gap: 5px; font-size: 8px; margin-top: 7px; }
+.aggregate-result-charts .bar-labels small { font-size: 8px; }
+.aggregate-result-charts .monthly-bar-group > strong, .aggregate-result-charts .profit-month-group > strong { font-size: 10px; margin-top: 8px; }
+.aggregate-result-charts .profit-month-group { height: 340px; }
+.aggregate-result-charts .profit-column { width: 44px; }
+.aggregate-result-charts .profit-column span { font-size: 9px; padding: 5px 7px; }
+@media (max-width: 850px) { .aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: auto; } }
