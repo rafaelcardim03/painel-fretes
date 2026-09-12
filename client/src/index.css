@@ -430,3 +430,22 @@ tbody tr:last-child td { border-bottom: 0; }
 .km-row strong { width: 57px; text-align: right; color: #a97424; font-size: 9px; }
 @media (max-width: 900px) { .fleet-dashboard-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .pie-layout { flex-direction: column; align-items: flex-start; } .pie-chart { align-self: center; } .line-chart { height: 180px; } }
+
+.pie-svg { overflow: visible; cursor: pointer; }
+.pie-slice { stroke: #fff; stroke-width: 1.2; transition: opacity .18s ease, transform .18s ease; transform-origin: 50% 50%; }
+.pie-slice:hover, .pie-slice.selected { opacity: .82; transform: scale(1.045); }
+.pie-legend > div { cursor: pointer; transition: background .18s ease, padding .18s ease; border-radius: 6px; padding: 3px 5px; }
+.pie-legend > div:hover, .pie-legend > div.active { background: #f1f6fb; padding-left: 8px; }
+.pie-legend strong { white-space: nowrap; font-size: 9px; }
+.fleet-table-card { background: #fff; border: 1px solid #e5eaf1; border-radius: 12px; padding: 18px; margin-top: 17px; box-shadow: 0 8px 22px rgba(29,53,82,.03); }
+.clear-fleet-filter { border: 1px solid #dfe7ef; border-radius: 6px; color: #4a7ca8; background: #f7fafe; padding: 7px 10px; font-size: 9px; }
+.fleet-data-table { margin-top: 15px; overflow-x: auto; }
+.fleet-table-head, .fleet-table-row { display: grid; grid-template-columns: 100px 105px minmax(190px, 1.6fr) 100px 105px; align-items: center; gap: 12px; min-width: 650px; }
+.fleet-table-head { color: #91a0ae; border-bottom: 1px solid #edf1f5; padding: 0 10px 9px; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.fleet-table-row { color: #58718b; border-bottom: 1px solid #f0f3f6; padding: 11px 10px; font-size: 9px; }
+.fleet-table-row > span:nth-child(3) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fleet-table-row strong { color: #2d4d6d; font-family: "Space Grotesk", sans-serif; font-size: 11px; }
+.plate-button { justify-self: start; color: #347bc0; background: #eaf4ff; border: 1px solid #d7eafa; border-radius: 5px; padding: 5px 7px; font-size: 9px; font-weight: 800; }
+.plate-button:hover, .plate-button.selected { color: #fff; background: #2f86dd; border-color: #2f86dd; }
+.table-empty { color: #95a3b1; padding: 22px 10px; font-size: 10px; }
+.table-more { color: #8b9baa; border-top: 1px solid #edf1f5; padding-top: 10px; margin-top: 2px; font-size: 9px; }
