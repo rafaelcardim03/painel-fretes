@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   ArrowDownUp,
+  BarChart3,
   ArrowRight,
   Check,
   ChevronDown,
@@ -421,47 +422,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="workspace-switcher">
-          <div className="workspace-avatar">O</div>
-          <div className="workspace-copy"><span>Operação principal</span><strong>Unidade MTX</strong></div>
-          <ChevronDown size={15} />
-        </div>
-
-        <div className="sidebar-label">Navegação</div>
-        <nav className="sidebar-nav">
-          <button className={activeSection === "Visão geral" ? "nav-item active" : "nav-item"} onClick={() => setActiveSection("Visão geral")}>
-            <LayoutDashboard size={17} /><span>Visão geral</span><span className="nav-pip" />
-          </button>
-          <button className={activeSection === "Fretes" ? "nav-item active" : "nav-item"} onClick={() => setActiveSection("Fretes")}>
-            <PackageCheck size={17} /><span>Fretes</span><span className="nav-count">{freights.length.toLocaleString("pt-BR")}</span>
-          </button>
-          <button className={activeSection === "Relatórios" ? "nav-item active" : "nav-item"} onClick={() => openSoon("Relatórios")}>
-            <ReceiptText size={17} /><span>Relatórios</span><span className="soon-dot" />
-          </button>
-          <button className={activeSection === "Faturamento" ? "nav-item active" : "nav-item"} onClick={() => window.location.href = "/faturamento"}>
-            <ArrowDownUp size={17} /><span>Faturamento</span><span className="nav-pip" />
-          </button>
-          <button className={activeSection === "Operações com frota" ? "nav-item active" : "nav-item"} onClick={() => window.location.href = "/frota"}>
-            <Truck size={17} /><span>Operações com frota</span><span className="nav-pip" />
-          </button>
-        </nav>
-
-        <div className="sidebar-label sidebar-label-later">Em breve</div>
-        <nav className="sidebar-nav">
-          <button className="nav-item muted" onClick={() => openSoon("Indicadores")}><ArrowDownUp size={17} /><span>Indicadores</span></button>
-          <button className="nav-item muted" onClick={() => openSoon("Configurações")}><CircleHelp size={17} /><span>Configurações</span></button>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="help-card">
-            <div className="help-icon"><CloudUpload size={17} /></div>
-            <strong>Importação diária</strong>
-            <span>Atualize sua base sempre que precisar.</span>
-            <button onClick={() => inputRef.current?.click()}>Importar agora <ArrowRight size={14} /></button>
-          </div>
-          <div className="user-row"><div className="user-avatar">RC</div><div><strong>Rafael Costa</strong><span>Administrador</span></div><Menu size={16} /></div>
-        </div>
-      </aside>
+        <nav className="sidebar-nav sidebar-nav-compact"><button className="nav-item" onClick={() => window.location.href = "/faturamento"}><BarChart3 size={17} /><span>Faturamento</span></button><button className="nav-item" onClick={() => window.location.href = "/frota"}><Truck size={17} /><span>Operações com frota</span></button></nav></aside>
 
       <main className="main-content">
         <header className="topbar">
