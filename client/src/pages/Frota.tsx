@@ -1,13 +1,13 @@
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, CircleHelp, FileUp, LayoutDashboard, Menu, Pencil, ReceiptText, Save, Target, Trash2, Truck, X } from "lucide-react";
 
 type Row = { date: string; value: number; payer: string; vehicle: string; ba: number; km: number; complementary: boolean; status: string };
 const money = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\uFEFF\u00A0]/g, " ").trim().toLowerCase();
-const num = (v: string) => Number(v.replace(/\s/g, "").replace(/\./g, "").replace(",", ".")) || 0;
+const num = (v: string) => { const value = v.replace(/\s/g, "").replace(/%/g, ""); if (!value) return 0; return Number(value.includes(",") ? value.replace(/\./g, "").replace(",", ".") : value) || 0; };
 const iso = (v: string) => { const [d, m, y] = v.split("/"); return y ? `${y}-${m}-${d}` : ""; };
-const lines = (text: string) => text.split(/\r?\n/).filter(Boolean).map((line) => line.split(";"));
-const parse = (text: string): Row[] => { const data = lines(text); if (data.length < 2) return []; return data.slice(1).map((c) => ({ date: c[8] || "", value: num(c[90] || ""), payer: c[43] || "Não informado", vehicle: (c[18] || c[17] || "").trim().toUpperCase(), ba: num(c[52] || ""), km: num(c[65] || ""), complementary: /complementar|descarga|veiculo dedicado|estadia|reembolso/i.test(norm(c[53] || "")), status: norm(c[7] || "") })).filter((r) => r.date && r.status !== "cancelado" && r.status !== "cancelada"); };
+const csvRows = (text: string) => { const rows: string[][] = []; const firstLine = text.split(/\r?\n/, 1)[0] || ""; const delimiter = firstLine.includes(";") ? ";" : firstLine.includes("\t") ? "\t" : ","; let row: string[] = []; let cell = ""; let quoted = false; for (let i = 0; i < text.length; i += 1) { const c = text[i]; const next = text[i + 1]; if (c === '"' && quoted && next === '"') { cell += '"'; i += 1; } else if (c === '"') quoted = !quoted; else if (c === delimiter && !quoted) { row.push(cell.trim()); cell = ""; } else if ((c === "\n" || c === "\r") && !quoted) { if (c === "\r" && next === "\n") i += 1; row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); row = []; cell = ""; } else cell += c; } row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); return rows; };
+const parse = (text: string): Row[] => { const data = csvRows(text); if (data.length < 2) return []; const headers = data[0].map(norm); const find = (...names: string[]) => names.map(norm).map((name) => headers.indexOf(name)).find((i) => i >= 0) ?? -1; const dateIndex = find("data_emissao"); const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido"); const payerIndex = find("pagador_nome"); const collectVehicleIndex = find("veiculo_coleta"); const deliveryVehicleIndex = find("veiculo_entrega"); const baIndex = 52; const bbIndex = 53; const kmIndex = find("distancia_km"); const statusIndex = find("situacao_ctrc"); return data.slice(1).map((c) => ({ date: c[dateIndex] || "", value: num(c[valueIndex] || ""), payer: c[payerIndex] || "Não informado", vehicle: (c[deliveryVehicleIndex] || c[collectVehicleIndex] || "").trim().toUpperCase(), ba: num(c[baIndex] || ""), km: num(c[kmIndex] || ""), complementary: /complementar|descarga|veiculo dedicado|estadia|reembolso/i.test(norm(c[bbIndex] || "")), status: norm(c[statusIndex] || "") })).filter((r) => r.date && r.status !== "cancelado" && r.status !== "cancelada"); };
 const sample: Row[] = [
   { date: "02/01/2026", value: 3211.44, payer: "LOJAS EDMIL SA", vehicle: "MKQ7A04", ba: 0, km: 460, complementary: false, status: "liquidado" },
   { date: "02/01/2026", value: 3348.74, payer: "LOJAS EDMIL SA", vehicle: "MDG7D65", ba: 0, km: 520, complementary: false, status: "liquidado" },
@@ -15,7 +15,7 @@ const sample: Row[] = [
 ];
 
 export default function Frota() {
-  const [rows] = useState<Row[]>(() => { try { const raw = localStorage.getItem("rotaclara-csv"); return raw ? parse(raw) : sample; } catch { return sample; } });
+  const [rows, setRows] = useState<Row[]>(() => { try { const raw = localStorage.getItem("rotaclara-csv"); return raw ? parse(raw) : []; } catch { return []; } });
   const [month, setMonth] = useState("2026-01");
   const [vehicles, setVehicles] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]"); } catch { return []; } });
   const [input, setInput] = useState("");
@@ -23,6 +23,7 @@ export default function Frota() {
   const [editingValue, setEditingValue] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
+  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) return; fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parse(raw); if (parsed.length) { setRows(parsed); localStorage.setItem("rotaclara-csv", raw); } }).catch(() => undefined); }, []);
   const start = `${month}-01`; const [year, monthNumber] = month.split("-").map(Number); const end = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
   const fleetRows = useMemo(() => rows.filter((row) => vehicles.includes(row.vehicle) && iso(row.date) >= start && iso(row.date) <= end), [rows, vehicles, start, end]);
   const edmil = fleetRows.filter((r) => norm(r.payer).includes("lojas edmil sa")).reduce((s, r) => s + r.value, 0);

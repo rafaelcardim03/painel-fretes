@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -88,7 +88,7 @@ function Metric({ icon, label, value, detail, accent }: { icon: React.ReactNode;
 }
 
 export default function Faturamento() {
-  const [rows, setRows] = useState<BillingRow[]>(() => { try { const saved = localStorage.getItem("rotaclara-csv"); return saved ? parseImported(saved) : sampleRows; } catch { return sampleRows; } });
+  const [rows, setRows] = useState<BillingRow[]>(() => { try { const saved = localStorage.getItem("rotaclara-csv"); return saved ? parseImported(saved) : []; } catch { return []; } });
   const [month, setMonth] = useState("2026-01");
   const [payer, setPayer] = useState("todos");
   const [fleetVehicles, setFleetVehicles] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]"); } catch { return []; } });
@@ -100,6 +100,7 @@ export default function Faturamento() {
   const [notice, setNotice] = useState("");
   const [section, setSection] = useState("Faturamento");
   const dailyGoal = businessDays > 0 ? goal / businessDays : 0;
+  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) return; fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parseImported(raw); if (parsed.length) { setRows(parsed); localStorage.setItem("rotaclara-csv", raw); } }).catch(() => undefined); }, []);
 
   const [year, monthNumber] = month.split("-").map(Number);
   const start = `${month}-01`;

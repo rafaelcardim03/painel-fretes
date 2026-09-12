@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownUp,
   BarChart3,
@@ -353,14 +353,16 @@ function MetricCard({
 
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [freights, setFreights] = useState<Freight[]>(sampleFreights);
-  const [fileName, setFileName] = useState("bd.csv · amostra carregada");
+  const [freights, setFreights] = useState<Freight[]>(() => { try { const saved = localStorage.getItem("rotaclara-csv"); return saved ? parseRows(saved) : []; } catch { return []; } });
+  const [fileName, setFileName] = useState("Carregando base real...");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [ufFilter, setUfFilter] = useState("todas");
   const [activeSection, setActiveSection] = useState("Visão geral");
   const [dragging, setDragging] = useState(false);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) { setFileName("bd.csv · base local"); return; } fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parseRows(raw); if (parsed.length) { setFreights(parsed); localStorage.setItem("rotaclara-csv", raw); setFileName(`bd.csv · ${parsed.length.toLocaleString("pt-BR")} registros`); } }).catch(() => setFileName("Importe um CSV para começar")); }, []);
 
   const ufs = useMemo(() => Array.from(new Set(freights.map((freight) => freight.uf))).sort(), [freights]);
   const filteredFreights = useMemo(() => {
