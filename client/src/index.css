@@ -463,3 +463,19 @@ tbody tr:last-child td { border-bottom: 0; }
 .aggregate-breakdown h2 { color: #294361; font: 600 16px "Space Grotesk", sans-serif; margin-top: 5px; } .aggregate-breakdown p { color: #8998aa; font-size: 10px; margin-top: 4px; }
 .aggregate-breakdown-values { display: flex; gap: 22px; flex-wrap: wrap; } .aggregate-breakdown-values span { color: #7890a5; font-size: 10px; display: flex; align-items: center; gap: 6px; } .aggregate-breakdown-values i { width: 7px; height: 7px; border-radius: 50%; background: #2f8ce5; } .aggregate-breakdown-values span:nth-child(2) i { background: #e5a23c; } .aggregate-breakdown-values strong { color: #31516e; font-size: 11px; margin-left: 4px; }
 @media (max-width: 780px) { .aggregate-summary { grid-template-columns: 1fr; } .aggregate-breakdown { align-items: flex-start; flex-direction: column; } }
+
+.aggregate-kpis { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 15px; margin-top: 17px; }
+.aggregate-kpis .fleet-chart-card { min-height: 177px; }
+.aggregate-km-value { font-size: 26px; margin-top: 21px; }
+.aggregate-pie-card { min-width: 0; }
+.aggregate-pie-card .pie-layout { margin-top: 14px; gap: 14px; }
+.aggregate-pie-card .pie-chart { width: 112px; height: 112px; flex-basis: 112px; }
+.aggregate-pie-card .pie-chart::after { inset: 23px; }
+.aggregate-pie-card .pie-legend { gap: 7px; }
+.aggregate-pie-card .pie-legend > div { font-size: 8px; gap: 5px; }
+.aggregate-pie-card .pie-legend strong { font-size: 8px; }
+.aggregate-actions { display: flex; align-items: center; gap: 8px; }
+.export-button { height: 31px; padding: 0 10px; font-size: 9px; display: inline-flex; align-items: center; gap: 5px; }
+.export-button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 1000px) { .aggregate-kpis { grid-template-columns: 1fr 1fr; } .aggregate-pie-card { grid-column: 1 / -1; } }
+@media (max-width: 620px) { .aggregate-kpis { grid-template-columns: 1fr; } .aggregate-pie-card { grid-column: auto; } .aggregate-actions { flex-direction: column; align-items: flex-end; } }
