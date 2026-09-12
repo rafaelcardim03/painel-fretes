@@ -114,9 +114,11 @@ export default function Faturamento() {
   const complementaryTotal = complementaryRows.reduce((sum, row) => sum + row.value, 0);
   const normalShare = total ? (normalTotal / total) * 100 : 0;
   const complementaryShare = total ? (complementaryTotal / total) * 100 : 0;
+  const fixedOperations = useMemo(() => { try { const saved = JSON.parse(localStorage.getItem("rotaclara-fleet-fixed-payers") || "[]"); return saved.filter((item: { name: string; enabled: boolean }) => item.enabled).map((item: { name: string }) => item.name); } catch { return ["LOJAS EDMIL SA", "EVS EXPRESS TRANSPORTES LTDA"]; } }, []);
+  const fixedOne = fixedOperations[0] || "LOJAS EDMIL SA"; const fixedTwo = fixedOperations[1] || "EVS EXPRESS TRANSPORTES LTDA";
   const fleetRows = periodRows.filter((row) => fleetVehicles.includes(row.vehicle.trim().toUpperCase()));
-  const fleetEdmil = fleetRows.filter((row) => normalize(row.payer).includes("lojas edmil sa")).reduce((sum, row) => sum + row.value, 0);
-  const fleetEvs = fleetRows.filter((row) => normalize(row.payer).includes("evs express transportes ltda")).reduce((sum, row) => sum + row.value, 0);
+  const fleetEdmil = fleetRows.filter((row) => normalize(row.payer).includes(normalize(fixedOne))).reduce((sum, row) => sum + row.value, 0);
+  const fleetEvs = fleetRows.filter((row) => normalize(row.payer).includes(normalize(fixedTwo))).reduce((sum, row) => sum + row.value, 0);
   const fleetPerformance = fleetRows.reduce((sum, row) => sum + row.baValue, 0);
   const fleetExtra = fleetRows.reduce((sum, row) => sum + row.value, 0) - fleetEdmil - fleetEvs - fleetPerformance;
   const activeDates = new Set(periodRows.map((row) => row.date));

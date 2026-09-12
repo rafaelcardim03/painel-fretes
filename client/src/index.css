@@ -491,3 +491,15 @@ tbody tr:last-child td { border-bottom: 0; }
 .data-note { display: flex; align-items: center; gap: 7px; color: #7d9b8d; background: #f0faf5; border: 1px solid #d8f0e4; border-radius: 8px; padding: 10px 12px; font-size: 9px; margin-top: 15px; }
 .register-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; } .register-card-heading { display: flex; justify-content: space-between; align-items: start; } .register-count { background: #edf6ff; color: #347ec0; border-radius: 7px; padding: 6px 9px; font-weight: 800; font-size: 12px; } .register-add { display: flex; gap: 7px; margin: 19px 0 12px; } .register-add input { min-width: 0; flex: 1; border: 1px solid #dbe5ed; border-radius: 6px; padding: 8px 10px; font-size: 10px; } .register-list { border-top: 1px solid #edf1f5; } .register-row { min-height: 43px; border-bottom: 1px solid #edf1f5; display: flex; align-items: center; justify-content: space-between; color: #486781; font-size: 10px; } .register-row button { border: 0; background: transparent; color: #6b92b3; padding: 5px; } .register-row button.delete { color: #c56c70; } .client-row > div { display: flex; flex-direction: column; gap: 4px; } .client-row strong { color: #486781; font-size: 10px; } .client-row span { color: #9aa8b5; font-size: 9px; }
 @media (max-width: 800px) { .import-grid, .register-grid, .profit-charts { grid-template-columns: 1fr; } .profit-cards { grid-template-columns: 1fr; } .profit-head { align-items: start; flex-direction: column; gap: 10px; } }
+
+/* Cadastros são mantidos exclusivamente na tela /cadastros. */
+.fleet-page-card .fleet-heading, .fleet-page-card .fleet-register { display: none; }
+.fixed-operations-card { margin-top: 16px; }
+.fixed-list { border-top: 1px solid #edf1f5; margin-top: 15px; }
+.fixed-row { min-height: 44px; display: grid; grid-template-columns: 28px minmax(180px, 1fr) 190px 28px 28px; align-items: center; gap: 8px; border-bottom: 1px solid #edf1f5; color: #4c6a86; font-size: 10px; }
+.fixed-row strong { font-size: 10px; } .fixed-row span { color: #8ea0ae; font-size: 9px; } .fixed-row button { border: 0; background: transparent; color: #6b92b3; padding: 5px; } .fixed-row button.delete { color: #c56c70; } .fixed-toggle { width: 23px; height: 23px; border-radius: 50%; background: #eaf8f0 !important; color: #2ca879 !important; } .fixed-row.disabled .fixed-toggle { background: #f3f5f7 !important; color: #a8b2bb !important; } .fixed-row.disabled strong { color: #9aa7b2; }
+.cancel-register { margin-top: 8px; border: 0; background: transparent; color: #6387a3; display: inline-flex; align-items: center; gap: 4px; font-size: 9px; }
+
+/* Meta mensal também é mantida exclusivamente em Cadastros. */
+.meta-config { display: none; }
+.goal-register-card { margin-top: 16px; } .goal-register-fields { align-items: end; } .goal-register-fields label { display: flex; flex-direction: column; gap: 5px; color: #7d91a2; font-size: 9px; flex: 1; } .goal-register-fields input { border: 1px solid #dbe5ed; border-radius: 6px; padding: 8px 9px; font-size: 10px; min-width: 0; } .goal-register-fields label:first-child { flex: .75; }
