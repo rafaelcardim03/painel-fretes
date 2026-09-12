@@ -376,3 +376,17 @@ tbody tr:last-child td { border-bottom: 0; }
 .fleet-footnote svg { color: #2fb486; }
 @media (max-width: 1050px) { .fleet-cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 650px) { .fleet-heading { align-items: flex-start; flex-direction: column; } .fleet-input-wrap { width: 100%; } .fleet-input-wrap input { flex: 1; width: auto; } .fleet-cards { grid-template-columns: 1fr; } }
+
+.fleet-import-button { height: 34px; padding: 0 11px; font-size: 10px; box-shadow: none; display: inline-flex; align-items: center; gap: 6px; }
+.fleet-vehicle-list { display: grid; grid-template-columns: repeat(3, minmax(170px, 1fr)); flex-basis: 100%; gap: 7px; }
+.fleet-vehicle-row { display: flex; align-items: center; gap: 5px; min-height: 32px; padding: 5px 7px 5px 10px; color: #42617e; background: #eaf4ff; border: 1px solid #d5e9fc; border-radius: 8px; font-size: 9px; font-weight: 700; }
+.fleet-vehicle-row > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vehicle-action { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 5px; background: transparent; }
+.vehicle-action.edit { color: #4b82b7; }
+.vehicle-action.delete { color: #b86d79; }
+.vehicle-action.save { color: #238966; background: #dff5e9; }
+.vehicle-action.cancel { color: #9b7580; }
+.vehicle-action:hover { background: rgba(255,255,255,.75); }
+.fleet-edit-input { min-width: 0; flex: 1; height: 24px; border: 1px solid #b9d8f2; border-radius: 5px; padding: 0 6px; color: #38516e; background: #fff; font-size: 9px; text-transform: uppercase; outline: none; }
+@media (max-width: 850px) { .fleet-vehicle-list { grid-template-columns: repeat(2, minmax(160px, 1fr)); } }
+@media (max-width: 650px) { .fleet-vehicle-list { grid-template-columns: 1fr; } .fleet-import-button { flex: 1; } }
