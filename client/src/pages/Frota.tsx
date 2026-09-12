@@ -44,7 +44,7 @@ export default function Frota() {
   const ticketMedio = fleetRows.length ? fleetRows.reduce((s, r) => s + r.value, 0) / fleetRows.length : 0;
   const normalRows = fleetRows.filter((r) => !r.complementary);
   const complementaryRows = fleetRows.filter((r) => r.complementary);
-  const days = Array.from({ length: Math.min(14, Math.max(new Date(year, monthNumber, 0).getDate(), 1)) }, (_, i) => i + 1);
+  const days = Array.from({ length: Math.max(new Date(year, monthNumber, 0).getDate(), 1) }, (_, i) => i + 1);
   const daily = days.map((day) => { const dayRows = fleetRows.filter((r) => Number(r.date.split("/")[0]) === day); return { day, normal: dayRows.filter((r) => !r.complementary).reduce((s, r) => s + r.value, 0), complementary: dayRows.filter((r) => r.complementary).reduce((s, r) => s + r.value, 0) }; });
   const maxDaily = Math.max(...daily.map((d) => Math.max(d.normal, d.complementary)), 1);
   const clients = [{ name: "LOJAS EDMIL SA", value: edmil }, { name: "EVS EXPRESS TRANSPORTES LTDA", value: evs }, { name: "FRETE DESEMPENHO", value: desempenho }, { name: "FRETE EXTRA", value: extra }].filter((item) => item.value > 0);
