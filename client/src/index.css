@@ -518,3 +518,22 @@ tbody tr:last-child td { border-bottom: 0; }
 .day-label:hover, .day-label.selected { color: #2f8ce5; font-weight: 800; }
 .fleet-table-head, .fleet-table-row { grid-template-columns: 90px minmax(120px, 1fr) minmax(120px, 1fr) 90px 85px minmax(160px, 1.2fr) 75px 100px; min-width: 950px; }
 .fleet-table-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Agregados: lucro primeiro, faturamento x custo em segundo e tabela por último. */
+.aggregate-result-charts { grid-template-columns: 1.12fr 1fr; gap: 18px; margin-top: 17px; }
+.monthly-profit-card, .monthly-bars-card { min-height: 440px; }
+.profit-month-bars { min-height: 320px; }
+.monthly-bars { min-height: 320px; }
+.monthly-table { max-width: 1080px; margin-left: auto; margin-right: auto; }
+.monthly-head, .monthly-row { padding: 8px 12px; gap: 8px; }
+.monthly-head span, .monthly-row > * { text-align: center !important; }
+.monthly-row { font-size: 9px; }
+
+.aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: hidden; gap: 5px; }
+.aggregate-result-charts .monthly-bar-group, .aggregate-result-charts .profit-month-group { min-width: 48px; }
+.aggregate-result-charts .bar-value-row { gap: 2px; }
+.aggregate-result-charts .bar-value-row span, .aggregate-result-charts .bar-value-row i { width: 16px; }
+.aggregate-result-charts .profit-column { width: 26px; }
+.aggregate-result-charts .bar-labels { gap: 2px; font-size: 6px; }
+
+@media (max-width: 850px) { .aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: auto; } }
