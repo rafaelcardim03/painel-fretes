@@ -10,6 +10,7 @@ import Frota from "./pages/Frota";
 import Agregados from "./pages/Agregados";
 import Importacao from "./pages/Importacao";
 import Cadastros from "./pages/Cadastros";
+import Terceiros from "./pages/Terceiros";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/agregados" component={Agregados} />
       <Route path="/importacao" component={Importacao} />
       <Route path="/cadastros" component={Cadastros} />
+      <Route path="/terceiros" component={Terceiros} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
