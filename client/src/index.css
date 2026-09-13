@@ -554,3 +554,5 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (max-width: 850px) { .aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: auto; } }
 
 /* A tela Importar arquivos não exibe mais o painel de rentabilidade. */
+
+.import-card-icon.green { background: #eaf8f1; color: #2b9c73; }
