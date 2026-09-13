@@ -552,3 +552,5 @@ tbody tr:last-child td { border-bottom: 0; }
 .aggregate-result-charts .profit-column { width: 44px; }
 .aggregate-result-charts .profit-column span { font-size: 9px; padding: 5px 7px; }
 @media (max-width: 850px) { .aggregate-result-charts .monthly-bars, .aggregate-result-charts .profit-month-bars { overflow-x: auto; } }
+
+/* A tela Importar arquivos não exibe mais o painel de rentabilidade. */
