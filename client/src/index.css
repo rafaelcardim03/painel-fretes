@@ -572,6 +572,10 @@ tbody tr:last-child td { border-bottom: 0; }
 .third-party-upload { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
 .third-party-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .third-party-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.third-party-rate-card { --metric-accent: #8a70dc; }
+.third-party-rate-card span { color: #6952a8; }
+.third-party-rate-card strong { color: #6149a2; }
+.third-party-rate-card small { line-height: 1.35; min-height: 28px; }
 .third-party-table-card { margin-top: 18px; }
 .third-party-table-card .table-card-heading { align-items: flex-end; }
 .third-party-table-card .table-filters { display: flex; gap: 8px; align-items: center; }
