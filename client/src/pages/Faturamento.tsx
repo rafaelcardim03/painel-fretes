@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { loadFreightRaw } from "@/lib/freightStorage";
 import {
   ArrowRight,
   BarChart3,
@@ -88,7 +89,7 @@ function Metric({ icon, label, value, detail, accent }: { icon: React.ReactNode;
 }
 
 export default function Faturamento() {
-  const [rows, setRows] = useState<BillingRow[]>(() => { try { const saved = localStorage.getItem("rotaclara-csv"); return saved ? parseImported(saved) : []; } catch { return []; } });
+  const [rows, setRows] = useState<BillingRow[]>([]);
   const [month, setMonth] = useState("2026-01");
   const [payer, setPayer] = useState("todos");
   const [fleetVehicles, setFleetVehicles] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]"); } catch { return []; } });
@@ -100,7 +101,7 @@ export default function Faturamento() {
   const [notice, setNotice] = useState("");
   const [section, setSection] = useState("Faturamento");
   const dailyGoal = businessDays > 0 ? goal / businessDays : 0;
-  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) return; fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parseImported(raw); if (parsed.length) { setRows(parsed); localStorage.setItem("rotaclara-csv", raw); } }).catch(() => undefined); }, []);
+  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (!alive) return; const parsed = raw ? parseImported(raw) : []; if (parsed.length) { setRows(parsed); const validMonths = Array.from(new Set(parsed.map((row) => toIso(row.date).slice(0, 7)).filter(Boolean))).sort(); if (validMonths.length) setMonth(validMonths[validMonths.length - 1]); return; } return fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((fallback) => { const fallbackRows = parseImported(fallback); if (alive && fallbackRows.length) setRows(fallbackRows); }); }).catch(() => undefined); return () => { alive = false; }; }, []);
 
   const [year, monthNumber] = month.split("-").map(Number);
   const start = `${month}-01`;
