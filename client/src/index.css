@@ -610,3 +610,5 @@ tbody tr:last-child td { border-bottom: 0; }
 .third-party-legend-purple, .third-party-legend-blue { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; }
 .third-party-legend-purple { background:#8a70dc; } .third-party-legend-blue { background:#2f8ce5; }
 @media (max-width:760px) { .third-party-period-filter { align-items:stretch; flex-direction:column; } .third-party-period-filter > div { min-width:0; } .third-party-period-filter .outline-action { align-self:flex-start; } }
+
+.processing-banner{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:11px 14px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:600}.processing-banner .spin{animation:rotaclara-spin 1s linear infinite}.import-actions{display:flex;justify-content:flex-end;margin:-4px 0 14px}.outline-action:disabled{opacity:.6;cursor:not-allowed}.outline-action{display:inline-flex;align-items:center;gap:8px}@keyframes rotaclara-spin{to{transform:rotate(360deg)}}

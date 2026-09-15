@@ -37,3 +37,7 @@ export async function loadFreightRaw() {
   } catch { /* falls back to localStorage */ }
   return localStorage.getItem("rotaclara-csv") || "";
 }
+
+export function notifyReportsRefresh() {
+  window.dispatchEvent(new CustomEvent("rotaclara-reports-refresh"));
+}
