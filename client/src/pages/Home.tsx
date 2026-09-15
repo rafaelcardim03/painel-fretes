@@ -21,6 +21,8 @@ import {
   X,
 } from "lucide-react";
 
+import { loadFreightRaw, saveFreightRaw } from "@/lib/freightStorage";
+
 type Freight = {
   id: string;
   ctrc: string;
@@ -362,7 +364,7 @@ export default function Home() {
   const [dragging, setDragging] = useState(false);
   const [notice, setNotice] = useState("");
 
-  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) { setFileName("bd.csv · base local"); return; } fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parseRows(raw); if (parsed.length) { setFreights(parsed); localStorage.setItem("rotaclara-csv", raw); setFileName(`bd.csv · ${parsed.length.toLocaleString("pt-BR")} registros`); } }).catch(() => setFileName("Importe um CSV para começar")); }, []);
+  useEffect(() => { loadFreightRaw().then((existing) => { if (existing) { const parsed = parseRows(existing); if (parsed.length) { setFreights(parsed); setFileName(`bd.csv · ${parsed.length.toLocaleString("pt-BR")} registros`); return; } } return fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parseRows(raw); if (parsed.length) { setFreights(parsed); void saveFreightRaw(raw); setFileName(`bd.csv · ${parsed.length.toLocaleString("pt-BR")} registros`); } }); }).catch(() => setFileName("Importe um CSV para começar")); }, []);
 
   const ufs = useMemo(() => Array.from(new Set(freights.map((freight) => freight.uf))).sort(), [freights]);
   const filteredFreights = useMemo(() => {
@@ -394,7 +396,7 @@ export default function Home() {
         const parsed = parseRows(String(reader.result ?? ""));
         if (!parsed.length) throw new Error("empty");
         setFreights(parsed);
-        localStorage.setItem("rotaclara-csv", String(reader.result ?? ""));
+        void saveFreightRaw(String(reader.result ?? ""));
         setFileName(`${file.name} · ${parsed.length.toLocaleString("pt-BR")} registros`);
         setNotice("Importação concluída. A visão geral foi atualizada com o novo arquivo.");
         setSearch("");
