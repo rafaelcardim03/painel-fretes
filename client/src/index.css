@@ -614,3 +614,34 @@ tbody tr:last-child td { border-bottom: 0; }
 .processing-banner{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:11px 14px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:600}.processing-banner .spin{animation:rotaclara-spin 1s linear infinite}.import-actions{display:flex;justify-content:flex-end;margin:-4px 0 14px}.outline-action:disabled{opacity:.6;cursor:not-allowed}.outline-action{display:inline-flex;align-items:center;gap:8px}@keyframes rotaclara-spin{to{transform:rotate(360deg)}}
 
 .report-loading{position:fixed;top:14px;right:24px;z-index:30;display:flex;align-items:center;gap:9px;padding:10px 14px;border:1px solid #bfdbfe;border-radius:12px;background:rgba(239,246,255,.96);color:#1d4ed8;box-shadow:0 8px 24px rgba(30,64,175,.12);font-size:12px;font-weight:700}.report-loading .spin{animation:rotaclara-spin 1s linear infinite}
+
+/* Identidade visual RotaClara inspirada na Meta Xpress: base clara, grafite e laranja */
+:root { --background:#ffffff; --foreground:#111111; --card:#ffffff; --card-foreground:#111111; --popover:#ffffff; --popover-foreground:#111111; --primary:#f26a21; --primary-foreground:#ffffff; --secondary:#fff3eb; --secondary-foreground:#111111; --muted:#f7f7f7; --muted-foreground:#666666; --accent:#fff0e6; --accent-foreground:#111111; --border:#e8e8e8; --input:#dddddd; --ring:#f26a21; --brand-orange:#f26a21; --brand-black:#111111; }
+html, body { background:#ffffff; color:#111111; }
+.app-shell { background:#ffffff; }
+.sidebar { background:#111111; border-right:1px solid #242424; }
+.brand-mark { background:#f26a21 !important; color:#ffffff !important; }
+.brand-name { color:#ffffff !important; }
+.brand-name span { color:#f26a21 !important; }
+.brand-subtitle, .sidebar-nav-section { color:#a9a9a9 !important; }
+.nav-item { color:#c8c8c8 !important; }
+.nav-item:hover, .nav-item.active { background:#f26a21 !important; color:#ffffff !important; }
+.nav-pip { background:#ffffff !important; }
+.main-content { background:#ffffff; }
+.topbar { background:#ffffff; border-bottom:1px solid #ededed; }
+.breadcrumbs, .date-label, .last-sync, .topbar-help { color:#666666 !important; }
+h1, h2, h3, .section-heading-row h2, .metric-card strong { color:#111111 !important; }
+h1 em { color:#f26a21 !important; }
+.eyebrow-line { background:#f26a21 !important; }
+.import-banner, .metric-card, .table-wrap, .table-card, .fleet-chart-card, .monthly-result-card, .aggregate-card, .third-party-evolution-card { background:#ffffff !important; border-color:#e5e5e5 !important; box-shadow:0 8px 22px rgba(0,0,0,.045) !important; }
+.import-banner-icon, .metric-icon { color:#f26a21 !important; background:#fff0e6 !important; }
+.import-button, .next-step-card button { background:#f26a21 !important; color:#ffffff !important; box-shadow:0 5px 12px rgba(242,106,33,.2) !important; }
+.import-button:hover, .next-step-card button:hover { background:#d95716 !important; }
+.outline-action { color:#111111 !important; border-color:#f26a21 !important; background:#ffffff !important; }
+.outline-action:hover { background:#fff3eb !important; }
+.metric-card::after { background:#f26a21 !important; }
+.chart-legend .dot-blue, .dot-blue, .third-party-legend-blue { background:#111111 !important; }
+.chart-legend .dot-amber, .dot-amber, .third-party-legend-purple { background:#f26a21 !important; }
+.status-blue, .file-pill { color:#111111 !important; background:#f5f5f5 !important; }
+.status-green { color:#f26a21 !important; background:#fff0e6 !important; }
+.processing-banner { border-color:#ffd1b8 !important; background:#fff7f2 !important; color:#c64b10 !important; }
