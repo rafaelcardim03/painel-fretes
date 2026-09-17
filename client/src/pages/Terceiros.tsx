@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Check, FileSpreadsheet, Search, Wallet } from "lucide-react";
 import { parseThirdPartyCsv, ThirdPartyRow } from "@/lib/terceiros";
+import { loadFreightRaw } from "@/lib/freightStorage";
 
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 const normalize = (value: string) => String(value || "").replace(/[\uFEFF\u00A0]/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
@@ -14,10 +15,10 @@ const navItem = (route: string, icon: string, label: string, active = false) => 
 type ReceiptRow = { value: number; plate: string; cnpj: string; status: string; date: string };
 export default function Terceiros() {
   const [rows] = useState<ThirdPartyRow[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]"); } catch { return []; } });
-  const [receiptRaw, setReceiptRaw] = useState(() => localStorage.getItem("rotaclara-csv") || "");
+  const [receiptRaw, setReceiptRaw] = useState("");
   const [search, setSearch] = useState(""); const [status, setStatus] = useState("TODOS");
   const [startDate, setStartDate] = useState(""); const [endDate, setEndDate] = useState("");
-  useEffect(() => { if (receiptRaw) return; fetch("/manus-storage/bd_457495e8.csv").then((response) => response.text()).then((raw) => { if (raw) setReceiptRaw(raw); }).catch(() => undefined); }, [receiptRaw]);
+  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (alive && raw) setReceiptRaw(raw); }).catch(() => undefined); return () => { alive = false; }; }, []);
   const receiptRows = useMemo<ReceiptRow[]>(() => { const data = csvRows(receiptRaw); if (data.length < 2) return []; const headers = data[0].map(normalize); const find = (...names: string[]) => names.map(normalize).map((name) => headers.indexOf(name)).find((index) => index >= 0) ?? -1; const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido"); const plateIndex = find("veiculo_entrega", "veiculo_coleta", "placa"); const cnpjIndex = find("pag_cnpj", "cnpj_pagador"); const statusIndex = find("situacao_ctrc", "situacao"); const dateIndex = find("data_emissao", "data"); return data.slice(1).map((cells) => ({ value: num(cells[valueIndex] || ""), plate: normalize(cells[plateIndex] || ""), cnpj: String(cells[cnpjIndex] || "").replace(/\D/g, ""), status: normalize(cells[statusIndex] || ""), date: cells[dateIndex] || "" })).filter((item) => item.value && !["CANCELADO", "CANCELADA"].includes(item.status)); }, [receiptRaw]);
   const fleetPlates = useMemo(() => { try { return new Set<string>((JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]") as string[]).map(normalize)); } catch { return new Set<string>(); } }, []);
   const aggregateCnpjs = useMemo(() => { try { return new Set((JSON.parse(localStorage.getItem("rotaclara-aggregate-clients") || "[]") as { cnpj: string }[]).map((item) => item.cnpj.replace(/\D/g, ""))); } catch { return new Set<string>(); } }, []);

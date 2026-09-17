@@ -1,3 +1,4 @@
+import { loadFreightRaw } from "@/lib/freightStorage";
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Check, Database, Layers, LineChart, Truck, Wallet } from "lucide-react";
 
@@ -12,10 +13,10 @@ const parseFreights = (raw: string): Freight[] => { const data = csvRows(raw); i
 const monthKey = (value: string) => { const match = value.match(/(\d{4})[-/](\d{1,2})/); if (match) return `${match[1]}-${String(Number(match[2])).padStart(2, "0")}`; const parts = value.split("/"); if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, "0")}`; const parsed = new Date(value); return Number.isNaN(parsed.getTime()) ? "" : `2026-${String(parsed.getMonth() + 1).padStart(2, "0")}`; };
 const monthLabel = (key: string) => new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date(`${key}-15T12:00:00`)).toUpperCase();
 export default function Agregados() {
-  const [freights, setFreights] = useState<Freight[]>(() => { try { const raw = localStorage.getItem("rotaclara-csv"); return raw ? parseFreights(raw) : []; } catch { return []; } });
+  const [freights, setFreights] = useState<Freight[]>([]);
   const [costs, setCosts] = useState<Cost[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-costs") || "[]"); } catch { return []; } });
   const [clients] = useState<Client[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-aggregate-clients") || JSON.stringify(defaultClients)); } catch { return defaultClients; } });
-  useEffect(() => { if (!localStorage.getItem("rotaclara-csv")) fetch("/manus-storage/bd_457495e8.csv").then((r) => r.text()).then((raw) => { setFreights(parseFreights(raw)); localStorage.setItem("rotaclara-csv", raw); }).catch(() => undefined); }, []);
+  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (!alive) return; const parsed = raw ? parseFreights(raw) : []; if (parsed.length) setFreights(parsed); }).catch(() => undefined); return () => { alive = false; }; }, []);
   useEffect(() => { const timer = window.setInterval(() => { try { const raw = localStorage.getItem("rotaclara-costs") || "[]"; setCosts(JSON.parse(raw)); } catch { /* mantém */ } }, 1000); return () => window.clearInterval(timer); }, []);
   const targetCnpjs = clients.map((c) => c.cnpj.replace(/\D/g, ""));
   const months = useMemo(() => { const keys = new Set([...freights.filter((r) => targetCnpjs.includes(r.cnpj)).map((r) => monthKey(r.date)), ...costs.map((r) => monthKey(r.date))].filter(Boolean)); return Array.from(keys).sort(); }, [freights, costs, clients]);

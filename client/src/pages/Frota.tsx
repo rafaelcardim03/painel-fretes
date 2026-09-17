@@ -1,3 +1,4 @@
+import { loadFreightRaw } from "@/lib/freightStorage";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, CircleHelp, FileUp, LayoutDashboard, Menu, Pencil, ReceiptText, Save, Target, Trash2, Truck, X } from "lucide-react";
 
@@ -16,7 +17,7 @@ const sample: Row[] = [
 ];
 
 export default function Frota() {
-  const [rows, setRows] = useState<Row[]>(() => { try { const raw = localStorage.getItem("rotaclara-csv"); return raw ? parse(raw) : []; } catch { return []; } });
+  const [rows, setRows] = useState<Row[]>([]);
   const [month, setMonth] = useState("2026-01");
   const [vehicles, setVehicles] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]"); } catch { return []; } });
   const [fixedOperations] = useState<{ name: string; enabled: boolean }[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-fleet-fixed-payers") || JSON.stringify([{ name: "LOJAS EDMIL SA", enabled: true }, { name: "EVS EXPRESS TRANSPORTES LTDA", enabled: true }])) } catch { return [{ name: "LOJAS EDMIL SA", enabled: true }, { name: "EVS EXPRESS TRANSPORTES LTDA", enabled: true }]; } });
@@ -28,7 +29,7 @@ export default function Frota() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  useEffect(() => { if (localStorage.getItem("rotaclara-csv")) return; fetch("/manus-storage/bd_fd19ed05.csv").then((response) => response.text()).then((raw) => { const parsed = parse(raw); if (parsed.length) { setRows(parsed); localStorage.setItem("rotaclara-csv", raw); } }).catch(() => undefined); }, []);
+  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (!alive) return; const parsed = raw ? parse(raw) : []; if (parsed.length) { setRows(parsed); const months = Array.from(new Set(parsed.map((row) => iso(row.date).slice(0, 7)).filter(Boolean))).sort(); if (months.length) setMonth(months[months.length - 1]); } }).catch(() => undefined); return () => { alive = false; }; }, []);
   const start = `${month}-01`; const [year, monthNumber] = month.split("-").map(Number); const end = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
   const fleetRows = useMemo(() => rows.filter((row) => vehicles.includes(row.vehicle) && iso(row.date) >= start && iso(row.date) <= end), [rows, vehicles, start, end]);
   const activeFixed = fixedOperations.filter((item) => item.enabled);
