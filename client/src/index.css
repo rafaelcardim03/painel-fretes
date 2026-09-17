@@ -612,3 +612,5 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (max-width:760px) { .third-party-period-filter { align-items:stretch; flex-direction:column; } .third-party-period-filter > div { min-width:0; } .third-party-period-filter .outline-action { align-self:flex-start; } }
 
 .processing-banner{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:11px 14px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:600}.processing-banner .spin{animation:rotaclara-spin 1s linear infinite}.import-actions{display:flex;justify-content:flex-end;margin:-4px 0 14px}.outline-action:disabled{opacity:.6;cursor:not-allowed}.outline-action{display:inline-flex;align-items:center;gap:8px}@keyframes rotaclara-spin{to{transform:rotate(360deg)}}
+
+.report-loading{position:fixed;top:14px;right:24px;z-index:30;display:flex;align-items:center;gap:9px;padding:10px 14px;border:1px solid #bfdbfe;border-radius:12px;background:rgba(239,246,255,.96);color:#1d4ed8;box-shadow:0 8px 24px rgba(30,64,175,.12);font-size:12px;font-weight:700}.report-loading .spin{animation:rotaclara-spin 1s linear infinite}
