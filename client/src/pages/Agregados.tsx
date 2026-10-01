@@ -1,4 +1,4 @@
-import { loadFreightRaw } from "@/lib/freightStorage";
+import { loadFreightRaw, saveFreightRaw } from "@/lib/freightStorage";
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Check, Database, Layers, LineChart, LoaderCircle, Truck, Wallet } from "lucide-react";
 
@@ -17,7 +17,7 @@ export default function Agregados() {
   const [costs, setCosts] = useState<Cost[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-costs") || "[]"); } catch { return []; } });
   const [loadingBase, setLoadingBase] = useState(true);
   const [clients] = useState<Client[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-aggregate-clients") || JSON.stringify(defaultClients)); } catch { return defaultClients; } });
-  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (!alive) return; const parsed = raw ? parseFreights(raw) : []; if (parsed.length) setFreights(parsed); }).catch(() => undefined); return () => { alive = false; }; }, []);
+  useEffect(() => { let alive = true; const apply = (raw: string) => { const parsed = raw ? parseFreights(raw) : []; if (alive && parsed.length) setFreights(parsed); return parsed.length > 0; }; loadFreightRaw().then(async (raw) => { if (!alive) return; if (apply(raw)) return; const response = await fetch("/manus-storage/bd_fd19ed05.csv"); const fallback = await response.text(); if (apply(fallback)) void saveFreightRaw(fallback); }).catch(() => undefined).finally(() => { if (alive) setLoadingBase(false); }); return () => { alive = false; }; }, []);
   useEffect(() => { const timer = window.setInterval(() => { try { const raw = localStorage.getItem("rotaclara-costs") || "[]"; setCosts(JSON.parse(raw)); } catch { /* mantém */ } }, 1000); return () => window.clearInterval(timer); }, []);
   const targetCnpjs = clients.map((c) => c.cnpj.replace(/\D/g, ""));
   const months = useMemo(() => { const keys = new Set([...freights.filter((r) => targetCnpjs.includes(r.cnpj)).map((r) => monthKey(r.date)), ...costs.map((r) => monthKey(r.date))].filter(Boolean)); return Array.from(keys).sort(); }, [freights, costs, clients]);
