@@ -17,5 +17,8 @@ export async function loadImportedFile(key: string) {
 }
 export async function downloadImportedFile(key: string) {
   const stored = await loadImportedFile(key); if (!stored) return false;
-  const url = URL.createObjectURL(new Blob([stored.data], { type: stored.type })); const link = document.createElement("a"); link.href = url; link.download = stored.name; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
+  const url = URL.createObjectURL(new Blob([stored.data], { type: stored.type }));
+  const link = document.createElement("a"); link.href = url; link.download = stored.name; link.style.display = "none";
+  document.body.appendChild(link); link.click(); link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
 }
