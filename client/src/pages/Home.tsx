@@ -23,6 +23,7 @@ import {
 
 import { loadFreightRaw, saveFreightRaw } from "@/lib/freightStorage";
 
+import Sidebar from "@/components/Sidebar";
 type Freight = {
   id: string;
   ctrc: string;
@@ -417,16 +418,7 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup">
-          <div className="brand-mark"><Truck size={19} strokeWidth={2.4} /></div>
-          <div>
-            <div className="brand-name">Rota<span>Clara</span></div>
-            <div className="brand-subtitle">gestão de fretes</div>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav sidebar-nav-compact"><div className="sidebar-nav-section">VISUALIZAÇÃO</div><button className="nav-item" onClick={() => window.location.href = "/faturamento"}><span className="nav-text-icon">▥</span><span>Faturamento</span></button><button className="nav-item" onClick={() => window.location.href = "/frota"}><span className="nav-text-icon">▣</span><span>Operações com frota</span></button><button className="nav-item" onClick={() => window.location.href = "/agregados"}><span className="nav-text-icon">▦</span><span>Agregados</span></button><button className="nav-item" onClick={() => window.location.href = "/dre-frota"}><span className="nav-text-icon">◫</span><span>DRE Frota</span></button><button className="nav-item" onClick={() => window.location.href = "/terceiros"}><span className="nav-text-icon">◫</span><span>Terceiros</span></button><div className="sidebar-nav-section support-section">SUPORTE</div><button className="nav-item" onClick={() => window.location.href = "/importacao"}><span className="nav-text-icon">↥</span><span>Importar arquivos</span></button><button className="nav-item" onClick={() => window.location.href = "/cadastros"}><span className="nav-text-icon">⚙</span><span>Cadastros</span></button></nav></aside>
+      <Sidebar />
 
       <main className="main-content">
         <header className="topbar">
