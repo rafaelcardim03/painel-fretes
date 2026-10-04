@@ -757,3 +757,9 @@ h1 em { color:#f26a21 !important; }
   .period-filter, .third-party-period-filter { padding: 16px; }
   .period-fields label input[type="month"], .period-fields label select { width: 100%; }
 }
+
+.metric-comparison { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; font-weight: 700; line-height: 1.25; }
+.metric-comparison.positive { color: #16834b; }
+.metric-comparison.negative { color: #c43b3b; }
+.metric-comparison.neutral { color: #7b8794; }
+.metric-comparison svg { flex: 0 0 auto; }
