@@ -765,3 +765,10 @@ h1 em { color:#f26a21 !important; }
 .metric-comparison.negative { color: #c43b3b; }
 .metric-comparison.neutral { color: #7b8794; }
 .metric-comparison svg { flex: 0 0 auto; }
+
+
+/* Faturamento: barras do gráfico Evolução do período */
+.billing-card .bar-real { background: #f26a21 !important; }
+.billing-card .bar-target { background: #111111 !important; }
+.billing-card .legend-orange { background: #f26a21 !important; }
+.billing-card .legend-black { background: #111111 !important; }
