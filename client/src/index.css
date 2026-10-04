@@ -772,3 +772,9 @@ h1 em { color:#f26a21 !important; }
 .billing-card .bar-target { background: #111111 !important; }
 .billing-card .legend-orange { background: #f26a21 !important; }
 .billing-card .legend-black { background: #111111 !important; }
+
+
+/* Cards de operações fixas: destaque roxo ao passar o mouse */
+.fleet-card.fleet-purple { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; cursor: default; }
+.fleet-card.fleet-purple:hover { transform: translateY(-4px); border-color: #7760c6; box-shadow: 0 12px 24px rgba(119, 96, 198, .22); }
+.fleet-card.fleet-purple:hover strong, .fleet-card.fleet-purple:hover span { color: #624bab; }

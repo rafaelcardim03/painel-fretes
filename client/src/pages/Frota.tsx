@@ -36,7 +36,7 @@ export default function Frota() {
   const start = `${month}-01`; const [year, monthNumber] = month.split("-").map(Number); const end = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
   const fleetRows = useMemo(() => rows.filter((row) => vehicles.includes(row.vehicle) && iso(row.date) >= start && iso(row.date) <= end), [rows, vehicles, start, end]);
   const activeFixed = fixedOperations.filter((item) => item.enabled && item.name.trim());
-  const fixedCards = activeFixed.map((item) => { const itemRows = fleetRows.filter((r) => norm(r.payer).includes(norm(item.name))); return { name: item.name, rows: itemRows, value: itemRows.reduce((sum, row) => sum + row.value, 0) }; });
+  const fixedCards = activeFixed.map((item) => { const itemRows = fleetRows.filter((r) => norm(r.payer).includes(norm(item.name))); return { name: item.name, rows: itemRows, value: itemRows.reduce((sum, row) => sum + row.value, 0) }; }).sort((a, b) => b.value - a.value);
   const desempenhoRows = fleetRows.filter((r) => r.returnMarked);
   const fixedRows = fixedCards.flatMap((card) => card.rows);
   const extraRows = fleetRows.filter((r) => !fixedRows.includes(r) && !desempenhoRows.includes(r));
@@ -50,7 +50,7 @@ export default function Frota() {
   const maxDaily = Math.max(...daily.map((d) => Math.max(d.normal, d.complementary)), 1);
   const clients = [...fixedCards.map((card) => ({ name: card.name, value: card.value })), { name: "FRETE DESEMPENHO", value: desempenho }, { name: "FRETE EXTRA", value: extra }].filter((item) => item.value > 0);
   const clientTotal = clients.reduce((s, c) => s + c.value, 0) || 1;
-  const clientColors = ["#2f8ce5", "#8a70dc", "#e5a23c", "#31b88a", "#e36f87"];
+  const clientColors = clients.map((client) => fixedCards.some((card) => card.name === client.name) ? "#7760c6" : client.name === "FRETE DESEMPENHO" ? "#e5a23c" : "#31b88a");
   const kmByVehicle = vehicles.map((vehicle) => { const items = fleetRows.filter((r) => r.vehicle === vehicle); const km = items.reduce((s, r) => s + r.km, 0); const value = items.reduce((s, r) => s + r.value, 0); return { vehicle, km, rate: km ? value / km : 0 }; }).filter((r) => r.km > 0).sort((a, b) => b.rate - a.rate);
   const maxRate = Math.max(...kmByVehicle.map((r) => r.rate), 1);
   const categoryRows: Record<string, Row[]> = Object.fromEntries([...fixedCards.map((card) => [card.name, card.rows] as const), ["FRETE DESEMPENHO", desempenhoRows], ["FRETE EXTRA", extraRows]]);
