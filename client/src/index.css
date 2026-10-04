@@ -642,6 +642,8 @@ h1 em { color:#f26a21 !important; }
 .metric-card::after { background:#f26a21 !important; }
 .chart-legend .dot-blue, .dot-blue, .third-party-legend-blue { background:#111111 !important; }
 .chart-legend .dot-amber, .dot-amber, .third-party-legend-purple { background:#f26a21 !important; }
+.third-party-bar-purple { background:#f26a21 !important; }
+.third-party-bar-blue { background:#111111 !important; }
 .status-blue, .file-pill { color:#111111 !important; background:#f5f5f5 !important; }
 .status-green { color:#f26a21 !important; background:#fff0e6 !important; }
 .processing-banner { border-color:#ffd1b8 !important; background:#fff7f2 !important; color:#c64b10 !important; }
