@@ -42,11 +42,15 @@ export function parseThirdPartyCsv(raw: string): ThirdPartyRow[] {
     } else cell += char;
   }
   row.push(cell); if (row.some((value) => clean(value))) rows.push(row);
-  if (rows.length < 3) return [];
-  const headers = rows[1].map(normalize);
+  const headerIndex = rows.findIndex((candidate) => {
+    const normalized = candidate.map(normalize);
+    return normalized.includes("CTRB") && (normalized.includes("TOTAL CTRB") || normalized.includes("VALOR LIQUIDO"));
+  });
+  if (headerIndex < 0 || rows.length <= headerIndex + 1) return [];
+  const headers = rows[headerIndex].map(normalize);
   const index = (name: string) => headers.indexOf(normalize(name));
   const get = (cells: string[], name: string) => clean(cells[index(name)] || "");
-  return rows.slice(2).map((cells) => ({
+  return rows.slice(headerIndex + 1).map((cells) => ({
     ctrb: get(cells, "CTRB"), tipo: get(cells, "TIPO"), situacao: get(cells, "SITUACAO"), emissao: get(cells, "DATA E HORA EMISSAO"),
     plate: get(cells, "PLACA CAVALO"), owner: get(cells, "PROPRIETARIO"), origin: get(cells, "CIDADE/UF ORIGEM"), destination: get(cells, "CIDADE/UF DESTINO"),
     km: numberValue(get(cells, "DISTANCIA KM")), total: numberValue(get(cells, "TOTAL CTRB")), liquid: numberValue(get(cells, "VALOR LIQUIDO")), toll: numberValue(get(cells, "VALE PEDAGIO")),
