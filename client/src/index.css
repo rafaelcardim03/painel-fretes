@@ -783,3 +783,11 @@ h1 em { color:#f26a21 !important; }
 /* Hover cruzado: card roxo e fatia correspondente do gráfico */
 .pie-slice.hovered { opacity: .8; transform: scale(1.06); stroke: #7760c6; stroke-width: 2.4; }
 .pie-legend > div.hovered { background: #f0ebff; padding-left: 8px; }
+
+/* Composição do DRE: comparação percentual x valor absoluto */
+.dre-pie-comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:12px; }
+.dre-pie-comparison .dre-pie { min-width:0; border:1px solid #edf0f2; border-radius:10px; padding:10px 8px 4px; }
+.dre-pie-title { display:flex; flex-direction:column; align-items:center; gap:3px; margin-top:2px; }
+.dre-pie-title strong { color:#20252b; font-size:12px; }
+.dre-pie-title span { color:#8998aa; font-size:9px; }
+@media (max-width:700px) { .dre-pie-comparison { grid-template-columns:1fr; } }
