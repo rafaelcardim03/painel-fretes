@@ -814,3 +814,19 @@ h1 em { color:#f26a21 !important; }
   .tv-page { min-height:auto; padding:0; background:#fff; color:#111; }
   .tv-header { border-bottom:2px solid #111; padding-bottom:10px; }.tv-header h1 { font-size:25px; margin-top:10px; }.tv-header p { font-size:9px; }.tv-brand { font-size:16px; }.tv-brand-mark { width:28px; height:28px; }.tv-brand-mark svg { width:15px; }.tv-controls,.tv-statusbar span:first-child,.tv-footer { display:none; }.tv-main { margin-top:10px; }.tv-statusbar { justify-content:flex-end; border:0; padding:3px 0; font-size:8px; }.tv-metrics { gap:7px; margin-top:5px; }.tv-metrics-secondary { margin-top:7px; }.tv-metric,.tv-metrics-secondary .tv-metric { min-height:75px; padding:9px 10px; box-shadow:none; }.tv-metric span { font-size:7px; }.tv-metric strong,.tv-metrics-secondary .tv-metric strong { font-size:17px; margin-top:7px; }.tv-metric small { font-size:7px; margin-top:3px; }.tv-charts { gap:7px; margin-top:7px; }.tv-panel { padding:8px 9px 3px; box-shadow:none; break-inside:avoid; }.tv-panel-heading span { font-size:7px; }.tv-panel-heading h2 { font-size:12px; margin-top:2px; }.tv-panel-heading strong { font-size:14px; }.tv-panel :where(.recharts-wrapper) { height:145px !important; }.tv-bottom { gap:7px; margin-top:7px; }.tv-notes textarea { min-height:45px; font-size:8px; }.tv-attention li,.tv-ok { font-size:8px; }.tv-attention ul { gap:4px; margin:7px 0 4px; }.tv-attention li span { width:14px; height:14px; }.tv-page button,.tv-page select { display:none; }
 }
+
+/* Ajustes do Modo TV: foco financeiro e análise por categoria */
+.tv-daily-panel { width:100%; margin-top:16px; padding:22px 24px 14px; }
+.tv-chart-subtitle { color:#999; font-size:11px; margin-top:5px; }
+.tv-summary-grid { display:grid; grid-template-columns:minmax(300px,.8fr) minmax(0,1.7fr); gap:14px; margin-top:16px; }
+.tv-third-party-panel,.tv-composition-panel { min-height:220px; }
+.tv-big-rate { color:#f0782d; font:700 clamp(42px,5vw,76px) "Space Grotesk",sans-serif; letter-spacing:-.06em; margin-top:28px; }
+.tv-big-rate.is-unavailable { color:#777; font-size:clamp(28px,3vw,44px); }
+.tv-rate-detail { color:#777; font-size:12px; line-height:1.5; margin-top:6px; }
+.tv-composition-list { display:grid; gap:15px; margin-top:20px; }
+.tv-composition-label { display:flex; align-items:center; gap:8px; color:#222; font-size:11px; }
+.tv-composition-label strong { min-width:220px; font-size:11px; }.tv-composition-label > span:last-child { margin-left:auto; color:#777; white-space:nowrap; }
+.tv-composition-dot { width:10px; height:10px; border-radius:50%; background:#7760c6; }.tv-composition-dot-1 { background:#e5a23c; }.tv-composition-dot-2 { background:#31b88a; }.tv-composition-dot-3 { background:#161616; }
+.tv-composition-track { height:10px; background:#f0f0f0; border-radius:999px; overflow:hidden; margin-top:7px; }.tv-composition-track i { display:block; height:100%; min-width:4px; background:#7760c6; border-radius:999px; }.tv-composition-row:nth-child(2) .tv-composition-track i { background:#e5a23c; }.tv-composition-row:nth-child(3) .tv-composition-track i { background:#31b88a; }.tv-composition-row:nth-child(4) .tv-composition-track i { background:#161616; }
+@media (max-width:900px) { .tv-summary-grid { grid-template-columns:1fr; }.tv-daily-panel { padding:17px 14px 8px; }.tv-composition-label strong { min-width:0; } }
+@media print { .tv-daily-panel { margin-top:7px; padding:8px 9px 3px; }.tv-daily-panel :where(.recharts-wrapper) { height:205px !important; }.tv-summary-grid { gap:7px; margin-top:7px; }.tv-third-party-panel,.tv-composition-panel { min-height:100px; }.tv-big-rate { font-size:30px; margin-top:10px; }.tv-rate-detail,.tv-chart-subtitle { font-size:7px; }.tv-composition-list { gap:6px; margin-top:8px; }.tv-composition-label { font-size:7px; }.tv-composition-label strong { font-size:7px; }.tv-composition-track { height:5px; margin-top:3px; } }
