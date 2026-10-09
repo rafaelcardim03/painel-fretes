@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Truck } from "lucide-react";
 const STORAGE_KEY = "rotaclara-sidebar-collapsed";
 
 const items = [
+  ["/gestao-vista", "▤", "Modo TV / Gestão à Vista"],
   ["/faturamento", "▥", "Faturamento"],
   ["/frota", "▣", "Operações com frota"],
   ["/agregados", "▦", "Agregados"],
