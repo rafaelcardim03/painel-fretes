@@ -22,7 +22,7 @@ const daysInMonth = (month: string) => { const [year, value] = month.split("-").
 const businessDays = (month: string) => { const total = daysInMonth(month); const [year, value] = month.split("-").map(Number); let count = 0; for (let day = 1; day <= total; day += 1) { const weekday = new Date(year, value - 1, day).getDay(); if (weekday !== 0 && weekday !== 6) count += 1; } return count; };
 const classify = (status: string) => { if (/entreg|conclu|finaliz|liquid/.test(status)) return "concluidas"; if (/transito|andamento|acompanh/.test(status)) return "andamento"; if (/pend|aberto|aguard/.test(status)) return "pendentes"; return "indisponivel"; };
 
-function TVMetric({ label, value, detail, accent = "orange" }: { label: string; value: string; detail: string; accent?: "orange" | "black" | "green" | "red" }) { return <div className={`tv-metric tv-accent-${accent}`}><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>; }
+function TVMetric({ label, value, accent = "orange" }: { label: string; value: string; detail?: string; accent?: "orange" | "black" | "green" | "red" }) { return <div className={`tv-metric tv-accent-${accent}`}><span>{label}</span><strong>{value}</strong></div>; }
 
 export default function GestaoVista() {
   const [rows, setRows] = useState<RawRow[]>([]); const [month, setMonth] = useState(""); const [lastUpdated, setLastUpdated] = useState<Date | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(""); const [fullscreen, setFullscreen] = useState(false); const [observation, setObservation] = useState("");
