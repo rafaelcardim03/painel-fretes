@@ -5,6 +5,7 @@ const STORAGE_KEY = "rotaclara-sidebar-collapsed";
 
 const items = [
   ["/gestao-vista", "▤", "Modo TV / Gestão à Vista"],
+  ["/gestao-operacional", "▤", "Modo TV / Gestão Operacional"],
   ["/faturamento", "▥", "Faturamento"],
   ["/frota", "▣", "Operações com frota"],
   ["/agregados", "▦", "Agregados"],

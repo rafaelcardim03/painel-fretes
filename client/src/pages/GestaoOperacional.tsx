@@ -1,0 +1,392 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  BarChart3,
+  CalendarDays,
+  Maximize2,
+  RefreshCw,
+  Truck,
+  X,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { loadFreightRaw } from "@/lib/freightStorage";
+import { ThirdPartyRow } from "@/lib/terceiros";
+
+type Row = { date: string; value: number; status: string; vehicle: string };
+type CostRow = { plate?: string };
+const money = (value: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  }).format(value);
+const normalize = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\uFEFF\u00A0]/g, " ")
+    .trim()
+    .toLowerCase();
+const plate = (value: unknown) =>
+  String(value ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+const numberValue = (value: unknown) => {
+  const text = String(value ?? "")
+    .replace(/\s/g, "")
+    .replace(/%/g, "");
+  if (!text) return 0;
+  return (
+    Number(
+      text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text
+    ) || 0
+  );
+};
+const isoDate = (value: unknown) => {
+  const raw = String(value || "").trim();
+  const br = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  if (br) return `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}`;
+  const us = raw.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  return us
+    ? `${us[1]}-${us[2].padStart(2, "0")}-${us[3].padStart(2, "0")}`
+    : "";
+};
+const readJson = <T,>(key: string, fallback: T): T => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "") || fallback;
+  } catch {
+    return fallback;
+  }
+};
+const csvRows = (text: string) => {
+  const first = text.split(/\r?\n/, 1)[0] || "";
+  const delimiter = first.includes(";")
+    ? ";"
+    : first.includes("\t")
+      ? "\t"
+      : ",";
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (c === '"' && quoted && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (c === '"') quoted = !quoted;
+    else if (c === delimiter && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((c === "\n" || c === "\r") && !quoted) {
+      if (c === "\r" && next === "\n") i += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += c;
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+};
+const parseRows = (raw: string): Row[] => {
+  const rows = csvRows(raw);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(normalize);
+  const find = (...names: string[]) =>
+    names
+      .map(normalize)
+      .map(name => headers.indexOf(name))
+      .find(index => index >= 0) ?? -1;
+  const dateIndex = find("data_emissao", "data");
+  const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido");
+  const statusIndex = find("situacao_ctrc", "situacao", "status");
+  const vehicleIndex = find(
+    "veiculo_entrega",
+    "veiculo_coleta",
+    "veiculo",
+    "placa"
+  );
+  return rows
+    .slice(1)
+    .map(cells => ({
+      date: isoDate(cells[dateIndex]),
+      value: numberValue(cells[valueIndex]),
+      status: normalize(cells[statusIndex]),
+      vehicle: plate(cells[vehicleIndex]),
+    }))
+    .filter(
+      row =>
+        /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
+        row.value >= 0 &&
+        !["cancelado", "cancelada"].includes(row.status)
+    );
+};
+
+export default function GestaoOperacional() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [month, setMonth] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
+  const fleet = useMemo(
+    () =>
+      readJson<string[]>("rotaclara-fleet-vehicles", [])
+        .map(plate)
+        .filter(Boolean),
+    []
+  );
+  const thirdRows = useMemo(
+    () => readJson<ThirdPartyRow[]>("rotaclara-terceiros", []),
+    []
+  );
+  const costPlates = useMemo(
+    () =>
+      new Set(
+        readJson<CostRow[]>("rotaclara-costs", [])
+          .map(item => plate(item.plate))
+          .filter(Boolean)
+      ),
+    []
+  );
+  const load = async () => {
+    setLoading(true);
+    try {
+      const stored = await loadFreightRaw();
+      const fallback = stored
+        ? ""
+        : await fetch("/manus-storage/bd_fd19ed05.csv").then(response =>
+            response.ok ? response.text() : ""
+          );
+      const parsed = parseRows(stored || fallback);
+      setRows(parsed);
+      const months = Array.from(
+        new Set(parsed.map(row => row.date.slice(0, 7)))
+      ).sort();
+      setMonth(current =>
+        current && months.includes(current)
+          ? current
+          : months[months.length - 1] || ""
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    void load();
+    const onFullscreen = () =>
+      setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFullscreen);
+    return () => document.removeEventListener("fullscreenchange", onFullscreen);
+  }, []);
+  const monthRows = useMemo(
+    () => rows.filter(row => row.date.startsWith(month)),
+    [rows, month]
+  );
+  const fleetRows = useMemo(
+    () => monthRows.filter(row => fleet.includes(row.vehicle)),
+    [monthRows, fleet]
+  );
+  const byVehicle = useMemo(
+    () =>
+      fleet
+        .map(vehicle => ({
+          vehicle,
+          value: fleetRows
+            .filter(row => row.vehicle === vehicle)
+            .reduce((sum, row) => sum + row.value, 0),
+        }))
+        .filter(item => item.value > 0)
+        .sort((a, b) => b.value - a.value),
+    [fleet, fleetRows]
+  );
+  const thirdPartyRevenue = monthRows
+    .filter(
+      row =>
+        row.vehicle &&
+        !fleet.includes(row.vehicle) &&
+        !costPlates.has(row.vehicle)
+    )
+    .reduce((sum, row) => sum + row.value, 0);
+  const thirdPartyCost = thirdRows
+    .filter(
+      row =>
+        isoDate(row.emissao).startsWith(month) &&
+        !["cancelado", "cancelada"].includes(normalize(row.situacao))
+    )
+    .reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const rate = thirdPartyRevenue
+    ? (thirdPartyCost / thirdPartyRevenue) * 100
+    : null;
+  const openFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen?.();
+    } catch {
+      /* navegador sem suporte */
+    }
+  };
+  const closeFullscreen = async () => {
+    try {
+      await document.exitFullscreen?.();
+    } catch {
+      /* noop */
+    }
+  };
+  if (loading)
+    return (
+      <div className="tv-page operational-tv">
+        <div className="tv-loading">
+          <RefreshCw className="spin" size={24} /> Carregando os indicadores...
+        </div>
+      </div>
+    );
+  const totalFleet = fleetRows.reduce((sum, row) => sum + row.value, 0);
+  return (
+    <div className="tv-page operational-tv">
+      <header className="tv-header">
+        <div>
+          <div className="tv-brand">
+            <span className="tv-brand-mark">
+              <Truck size={22} />
+            </span>
+            <strong>
+              Rota<span>Clara</span>
+            </strong>
+            <small>GESTÃO OPERACIONAL</small>
+          </div>
+          <h1>Operação em foco</h1>
+        </div>
+        <div className="tv-controls">
+          <label>
+            <CalendarDays size={16} /> Competência
+            <select
+              value={month}
+              onChange={event => setMonth(event.target.value)}
+            >
+              {Array.from(new Set(rows.map(row => row.date.slice(0, 7))))
+                .sort()
+                .map(item => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <button onClick={() => void load()} title="Atualizar agora">
+            <RefreshCw size={17} />
+          </button>
+          <button
+            onClick={fullscreen ? closeFullscreen : openFullscreen}
+            title={fullscreen ? "Sair da tela cheia" : "Abrir tela cheia"}
+          >
+            {fullscreen ? <X size={17} /> : <Maximize2 size={17} />}
+          </button>
+        </div>
+      </header>
+      <main className="tv-main operational-main">
+        <section className="operational-kpis">
+          <article className="tv-panel operational-rate-card">
+            <div className="tv-panel-heading">
+              <div>
+                <span>CUSTO TERCEIRO</span>
+                <h2>Custo terceiro sobre frete de terceiros</h2>
+                <p className="tv-chart-subtitle">
+                  Receita sem placas cadastradas como frota ou na base de
+                  custos.
+                </p>
+              </div>
+            </div>
+            <strong
+              className={`operational-rate ${rate === null ? "is-unavailable" : ""}`}
+            >
+              {rate === null
+                ? "Indisponível"
+                : `${rate.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`}
+            </strong>
+            <div className="tv-rate-detail">
+              {rate === null
+                ? "Importe a Base de Terceiros e tenha frete de terceiros no período."
+                : `${money(thirdPartyCost)} de custo ÷ ${money(thirdPartyRevenue)} de frete de terceiros`}
+            </div>
+          </article>
+          <article className="tv-panel operational-summary">
+            <span>FROTA EM ANÁLISE</span>
+            <strong>{money(totalFleet)}</strong>
+            <small>
+              {fleetRows.length.toLocaleString("pt-BR")} CTs ·{" "}
+              {byVehicle.length} veículos com faturamento
+            </small>
+          </article>
+        </section>
+        <section className="tv-panel operational-chart-panel">
+          <div className="tv-panel-heading">
+            <div>
+              <span>FATURAMENTO DA FROTA</span>
+              <h2>Faturamento por veículo cadastrado</h2>
+              <p className="tv-chart-subtitle">
+                Somente placas cadastradas em Cadastros como frota, na
+                competência selecionada.
+              </p>
+            </div>
+            <strong>{money(totalFleet)}</strong>
+          </div>
+          {byVehicle.length > 0 && (
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(420, byVehicle.length * 42)}
+            >
+              <BarChart
+                data={byVehicle}
+                layout="vertical"
+                margin={{ top: 12, right: 32, left: 24, bottom: 12 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#ececec" />
+                <XAxis
+                  type="number"
+                  tickFormatter={value =>
+                    `R$${Math.round(Number(value) / 1000)}k`
+                  }
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="vehicle"
+                  width={78}
+                  tick={{ fontSize: 13, fontWeight: 700 }}
+                />
+                <Tooltip
+                  formatter={(value: number) => money(value)}
+                  labelFormatter={label => `Placa ${label}`}
+                />
+                <Bar
+                  dataKey="value"
+                  name="Faturamento"
+                  fill="#f0782d"
+                  radius={[0, 7, 7, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          {byVehicle.length === 0 && (
+            <div className="tv-empty">
+              Nenhum faturamento encontrado para as placas cadastradas como
+              frota nesta competência.
+            </div>
+          )}
+        </section>
+      </main>
+      <footer className="tv-footer">
+        <span>RotaClara · Gestão Operacional</span>
+        <span>Base mensal · cancelados excluídos</span>
+      </footer>
+    </div>
+  );
+}
