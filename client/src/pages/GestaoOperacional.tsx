@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  BarChart3,
   CalendarDays,
   Maximize2,
   RefreshCw,
@@ -110,20 +109,24 @@ const parseRows = (raw: string): Row[] => {
   const dateIndex = find("data_emissao", "data");
   const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido");
   const statusIndex = find("situacao_ctrc", "situacao", "status");
-  const vehicleIndex = find(
-    "veiculo_entrega",
-    "veiculo_coleta",
-    "veiculo",
-    "placa"
-  );
+  const deliveryVehicleIndex = find("veiculo_entrega");
+  const collectionVehicleIndex = find("veiculo_coleta");
+  const plateIndex = find("placa", "veiculo");
   return rows
     .slice(1)
-    .map(cells => ({
-      date: isoDate(cells[dateIndex]),
-      value: numberValue(cells[valueIndex]),
-      status: normalize(cells[statusIndex]),
-      vehicle: plate(cells[vehicleIndex]),
-    }))
+    .map(cells => {
+      const vehicleValue =
+        cells[deliveryVehicleIndex] ||
+        cells[collectionVehicleIndex] ||
+        cells[plateIndex] ||
+        "";
+      return {
+        date: isoDate(cells[dateIndex]),
+        value: numberValue(cells[valueIndex]),
+        status: normalize(cells[statusIndex]),
+        vehicle: plate(vehicleValue),
+      };
+    })
     .filter(
       row =>
         /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
