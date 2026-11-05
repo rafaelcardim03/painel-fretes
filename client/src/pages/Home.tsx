@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 
 import { loadFreightRaw, saveFreightRaw } from "@/lib/freightStorage";
+
 import Sidebar from "@/components/Sidebar";
-import NotificationBell from "@/components/NotificationBell";
 type Freight = {
   id: string;
   ctrc: string;
@@ -425,7 +425,6 @@ export default function Home() {
           <div className="breadcrumbs"><span>Operação</span><span className="crumb-separator">/</span><strong>{activeSection}</strong></div>
           <div className="topbar-actions">
             <span className="last-sync"><span className="sync-dot" /> Base local · agora</span>
-            <NotificationBell />
             <button className="topbar-help" onClick={() => setNotice("A primeira versão lê a planilha diretamente no navegador. Relatórios detalhados entram na próxima fase.")}><CircleHelp size={17} /></button>
             <button className="topbar-avatar">RC</button>
           </div>
