@@ -344,7 +344,9 @@ export default function GestaoOperacional() {
           <article className="tv-panel operational-rate-card">
             <div className="tv-panel-heading">
               <div>
-                <span>CUSTO TERCEIRO</span>
+                <span style={{ color: "#f0782d", fontSize: "12px" }}>
+                  CUSTO TERCEIRO
+                </span>
               </div>
             </div>
             <strong
@@ -388,7 +390,7 @@ export default function GestaoOperacional() {
         <section className="tv-panel operational-chart-panel">
           <div className="tv-panel-heading">
             <div>
-              <span>FATURAMENTO DA FROTA</span>
+              <span style={{ fontSize: "12px" }}>FATURAMENTO DA FROTA</span>
             </div>
             <strong>{money(totalFleet)}</strong>
           </div>
