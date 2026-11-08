@@ -3165,10 +3165,9 @@ tbody tr:last-child td {
 }
 .fleet-table-head,
 .fleet-table-row {
-  grid-template-columns: 90px minmax(120px, 1fr) minmax(
-      120px,
-      1fr
-    ) 90px 85px minmax(160px, 1.2fr) 75px 100px;
+  grid-template-columns:
+    90px minmax(120px, 1fr) minmax(120px, 1fr)
+    90px 85px minmax(160px, 1.2fr) 75px 100px;
   min-width: 950px;
 }
 .fleet-table-row > span {
@@ -4331,9 +4330,12 @@ h1 em {
 .operational-summary {
   min-height: 190px;
 }
+.operational-rate-card .tv-panel-heading {
+  margin-bottom: 0;
+}
 .operational-rate {
   display: block;
-  margin: 22px 0 8px;
+  margin: 8px 0 8px;
   color: #f0782d;
   font:
     800 clamp(40px, 5vw, 76px) / 1 "Space Grotesk",
@@ -4389,7 +4391,9 @@ h1 em {
 .operational-composition-heading h2 {
   margin: 0;
   color: #161616;
-  font: 600 20px "Space Grotesk", sans-serif;
+  font:
+    600 20px "Space Grotesk",
+    sans-serif;
   letter-spacing: -0.035em;
 }
 .operational-composition-heading small {
@@ -4400,7 +4404,7 @@ h1 em {
 .operational-composition-list {
   display: grid;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 8px;
 }
 .operational-composition-row {
   display: grid;

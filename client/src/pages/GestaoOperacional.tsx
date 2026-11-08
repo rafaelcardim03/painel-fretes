@@ -12,7 +12,15 @@ import {
 import { loadFreightRaw } from "@/lib/freightStorage";
 import { ThirdPartyRow } from "@/lib/terceiros";
 
-type Row = { date: string; value: number; status: string; vehicle: string; vehicleCandidates: string[]; payer: string; returnMarked: boolean };
+type Row = {
+  date: string;
+  value: number;
+  status: string;
+  vehicle: string;
+  vehicleCandidates: string[];
+  payer: string;
+  returnMarked: boolean;
+};
 type CostRow = { plate?: string };
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -337,11 +345,6 @@ export default function GestaoOperacional() {
             <div className="tv-panel-heading">
               <div>
                 <span>CUSTO TERCEIRO</span>
-                <h2>Custo terceiro sobre frete de terceiros</h2>
-                <p className="tv-chart-subtitle">
-                  Receita sem placas cadastradas como frota ou na base de
-                  custos.
-                </p>
               </div>
             </div>
             <strong
@@ -360,8 +363,6 @@ export default function GestaoOperacional() {
           <article className="tv-panel operational-summary operational-composition-card">
             <div className="operational-composition-heading">
               <span>COMPOSIÇÃO</span>
-              <h2>Composição do faturamento</h2>
-              <small>Participação por categoria da frota</small>
             </div>
             {compositionRows.length > 0 ? (
               <div className="operational-composition-list">
@@ -388,11 +389,6 @@ export default function GestaoOperacional() {
           <div className="tv-panel-heading">
             <div>
               <span>FATURAMENTO DA FROTA</span>
-              <h2>Faturamento por veículo cadastrado</h2>
-              <p className="tv-chart-subtitle">
-                Somente placas cadastradas em Cadastros como frota, na
-                competência selecionada.
-              </p>
             </div>
             <strong>{money(totalFleet)}</strong>
           </div>
