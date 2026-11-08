@@ -305,7 +305,7 @@ export default function GestaoOperacional() {
             </strong>
             <small>GESTÃO OPERACIONAL</small>
           </div>
-          <h1>Operação em foco</h1>
+          <h1 style={{fontSize: '12px'}}>Operação em foco</h1>
         </div>
         <div className="tv-controls">
           <label>
