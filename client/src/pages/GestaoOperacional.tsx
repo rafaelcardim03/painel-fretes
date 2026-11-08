@@ -430,6 +430,7 @@ export default function GestaoOperacional() {
                 <Bar
                   dataKey="value"
                   name="Faturamento"
+                  barSize={23}
                   fill="#f0782d"
                   radius={[0, 7, 7, 0]}
                 />
