@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  Maximize2,
-  RefreshCw,
-  Truck,
-  X,
-} from "lucide-react";
+import { CalendarDays, Maximize2, RefreshCw, Truck, X } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -18,7 +12,14 @@ import {
 import { loadFreightRaw } from "@/lib/freightStorage";
 import { ThirdPartyRow } from "@/lib/terceiros";
 
-type Row = { date: string; value: number; status: string; vehicle: string };
+type Row = {
+  date: string;
+  value: number;
+  status: string;
+  vehicle: string;
+  payer: string;
+  returnMarked: boolean;
+};
 type CostRow = { plate?: string };
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -112,6 +113,8 @@ const parseRows = (raw: string): Row[] => {
   const deliveryVehicleIndex = find("veiculo_entrega");
   const collectionVehicleIndex = find("veiculo_coleta");
   const plateIndex = find("placa", "veiculo");
+  const payerIndex = find("pagador_nome", "pagador", "cliente_pagador");
+  const baIndex = 52;
   return rows
     .slice(1)
     .map(cells => {
@@ -125,6 +128,8 @@ const parseRows = (raw: string): Row[] => {
         value: numberValue(cells[valueIndex]),
         status: normalize(cells[statusIndex]),
         vehicle: plate(vehicleValue),
+        payer: String(cells[payerIndex] || "Não informado").trim(),
+        returnMarked: /retorno/i.test(cells[baIndex] || ""),
       };
     })
     .filter(
@@ -158,6 +163,17 @@ export default function GestaoOperacional() {
           .map(item => plate(item.plate))
           .filter(Boolean)
       ),
+    []
+  );
+  const fixedOperations = useMemo(
+    () =>
+      readJson<{ name: string; enabled: boolean }[]>(
+        "rotaclara-fleet-fixed-payers",
+        [
+          { name: "LOJAS EDMIL SA", enabled: true },
+          { name: "EVS EXPRESS TRANSPORTES LTDA", enabled: true },
+        ]
+      ).filter(item => item.enabled && item.name.trim()),
     []
   );
   const load = async () => {
@@ -252,6 +268,30 @@ export default function GestaoOperacional() {
       </div>
     );
   const totalFleet = fleetRows.reduce((sum, row) => sum + row.value, 0);
+  const fixedComposition = fixedOperations.map(operation => ({
+    name: operation.name,
+    value: fleetRows
+      .filter(row => normalize(row.payer).includes(normalize(operation.name)))
+      .reduce((sum, row) => sum + row.value, 0),
+  }));
+  const fixedCompositionRows = fleetRows.filter(row =>
+    fixedOperations.some(operation =>
+      normalize(row.payer).includes(normalize(operation.name))
+    )
+  );
+  const returnValue = fleetRows
+    .filter(row => row.returnMarked)
+    .reduce((sum, row) => sum + row.value, 0);
+  const extraValue = fleetRows
+    .filter(row => !fixedCompositionRows.includes(row) && !row.returnMarked)
+    .reduce((sum, row) => sum + row.value, 0);
+  const compositionRows = [
+    ...fixedComposition,
+    { name: "FRETE DESEMPENHO", value: returnValue },
+    { name: "FRETE EXTRA", value: extraValue },
+  ]
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
   return (
     <div className="tv-page operational-tv">
       <header className="tv-header">
@@ -320,13 +360,30 @@ export default function GestaoOperacional() {
                 : `${money(thirdPartyCost)} de custo ÷ ${money(thirdPartyRevenue)} de frete de terceiros`}
             </div>
           </article>
-          <article className="tv-panel operational-summary">
-            <span>FROTA EM ANÁLISE</span>
-            <strong>{money(totalFleet)}</strong>
-            <small>
-              {fleetRows.length.toLocaleString("pt-BR")} CTs ·{" "}
-              {byVehicle.length} veículos com faturamento
-            </small>
+          <article className="tv-panel operational-summary operational-composition-card">
+            <div className="operational-composition-heading">
+              <span>COMPOSIÇÃO DO FATURAMENTO</span>
+              <small>Participação por categoria da frota</small>
+            </div>
+            {compositionRows.length > 0 ? (
+              <div className="operational-composition-list">
+                {compositionRows.map(item => (
+                  <div className="operational-composition-row" key={item.name}>
+                    <span>{item.name}</span>
+                    <strong>{money(item.value)}</strong>
+                    <em>
+                      {totalFleet
+                        ? `${((item.value / totalFleet) * 100).toFixed(1).replace(".", ",")}%`
+                        : "0,0%"}
+                    </em>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="operational-composition-empty">
+                Sem faturamento na competência.
+              </div>
+            )}
           </article>
         </section>
         <section className="tv-panel operational-chart-panel">
