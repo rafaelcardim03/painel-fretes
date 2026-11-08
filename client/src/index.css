@@ -4384,6 +4384,12 @@ h1 em {
   font-weight: 800;
   letter-spacing: 0.14em;
 }
+.operational-composition-heading h2 {
+  margin: 0;
+  color: #fff;
+  font: 600 20px "Space Grotesk", sans-serif;
+  letter-spacing: -0.035em;
+}
 .operational-composition-heading small {
   margin: 0;
   color: #c7c7c7;

@@ -362,7 +362,8 @@ export default function GestaoOperacional() {
           </article>
           <article className="tv-panel operational-summary operational-composition-card">
             <div className="operational-composition-heading">
-              <span>COMPOSIÇÃO DO FATURAMENTO</span>
+              <span>COMPOSIÇÃO</span>
+              <h2>Composição do faturamento</h2>
               <small>Participação por categoria da frota</small>
             </div>
             {compositionRows.length > 0 ? (
