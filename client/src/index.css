@@ -4372,6 +4372,8 @@ h1 em {
 .operational-composition-card {
   justify-content: flex-start;
   padding: 22px 20px;
+  background: #fff;
+  color: #161616;
 }
 .operational-composition-heading {
   display: flex;
@@ -4386,13 +4388,13 @@ h1 em {
 }
 .operational-composition-heading h2 {
   margin: 0;
-  color: #fff;
+  color: #161616;
   font: 600 20px "Space Grotesk", sans-serif;
   letter-spacing: -0.035em;
 }
 .operational-composition-heading small {
   margin: 0;
-  color: #c7c7c7;
+  color: #777;
   font-size: 12px;
 }
 .operational-composition-list {
@@ -4406,18 +4408,18 @@ h1 em {
   align-items: center;
   gap: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid #ececec;
 }
 .operational-composition-row span {
   overflow: hidden;
-  color: #fff;
+  color: #161616;
   font-size: 11px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .operational-composition-row strong {
-  color: #fff;
+  color: #161616;
   font-size: 13px;
   white-space: nowrap;
 }
@@ -4431,7 +4433,7 @@ h1 em {
 }
 .operational-composition-empty {
   margin-top: 28px;
-  color: #c7c7c7;
+  color: #777;
   font-size: 12px;
 }
 .operational-chart-panel {
