@@ -114,7 +114,10 @@ const parseRows = (raw: string): Row[] => {
   const collectionVehicleIndex = find("veiculo_coleta");
   const plateIndex = find("placa", "veiculo");
   const payerIndex = find("pagador_nome", "pagador", "cliente_pagador");
-  const baIndex = 52;
+  const baHeaderIndex = headers.findIndex(header =>
+    ["observ1", "ba", "valor_ba"].includes(header)
+  );
+  const baIndex = baHeaderIndex >= 0 ? baHeaderIndex : 52;
   return rows
     .slice(1)
     .map(cells => {
