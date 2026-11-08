@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Maximize2, RefreshCw, Truck, X } from "lucide-react";
+import { CalendarDays, Maximize2, RefreshCw, X } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -296,16 +296,7 @@ export default function GestaoOperacional() {
     <div className="tv-page operational-tv">
       <header className="tv-header">
         <div>
-          <div className="tv-brand">
-            <span className="tv-brand-mark">
-              <Truck size={22} />
-            </span>
-            <strong>
-              Rota<span>Clara</span>
-            </strong>
-            <small>GESTÃO OPERACIONAL</small>
-          </div>
-          <h1 style={{fontSize: '12px'}}>Operação em foco</h1>
+          <h1 style={{ fontSize: "12px" }}>Operação em foco</h1>
         </div>
         <div className="tv-controls">
           <label>
@@ -446,7 +437,6 @@ export default function GestaoOperacional() {
         </section>
       </main>
       <footer className="tv-footer">
-        <span>RotaClara · Gestão Operacional</span>
         <span>Base mensal · cancelados excluídos</span>
       </footer>
     </div>
