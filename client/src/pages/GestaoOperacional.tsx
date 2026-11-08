@@ -12,14 +12,7 @@ import {
 import { loadFreightRaw } from "@/lib/freightStorage";
 import { ThirdPartyRow } from "@/lib/terceiros";
 
-type Row = {
-  date: string;
-  value: number;
-  status: string;
-  vehicle: string;
-  payer: string;
-  returnMarked: boolean;
-};
+type Row = { date: string; value: number; status: string; vehicle: string; vehicleCandidates: string[]; payer: string; returnMarked: boolean };
 type CostRow = { plate?: string };
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -121,16 +114,23 @@ const parseRows = (raw: string): Row[] => {
   return rows
     .slice(1)
     .map(cells => {
-      const vehicleValue =
-        cells[deliveryVehicleIndex] ||
-        cells[collectionVehicleIndex] ||
-        cells[plateIndex] ||
-        "";
+      const vehicleCandidates = Array.from(
+        new Set(
+          [
+            cells[deliveryVehicleIndex],
+            cells[collectionVehicleIndex],
+            cells[plateIndex],
+          ]
+            .map(plate)
+            .filter(Boolean)
+        )
+      );
       return {
         date: isoDate(cells[dateIndex]),
         value: numberValue(cells[valueIndex]),
         status: normalize(cells[statusIndex]),
-        vehicle: plate(vehicleValue),
+        vehicle: vehicleCandidates[0] || "",
+        vehicleCandidates,
         payer: String(cells[payerIndex] || "Não informado").trim(),
         returnMarked: /retorno/i.test(cells[baIndex] || ""),
       };
@@ -214,7 +214,10 @@ export default function GestaoOperacional() {
     [rows, month]
   );
   const fleetRows = useMemo(
-    () => monthRows.filter(row => fleet.includes(row.vehicle)),
+    () =>
+      monthRows.filter(row =>
+        row.vehicleCandidates.some(vehicle => fleet.includes(vehicle))
+      ),
     [monthRows, fleet]
   );
   const byVehicle = useMemo(
@@ -223,7 +226,7 @@ export default function GestaoOperacional() {
         .map(vehicle => ({
           vehicle,
           value: fleetRows
-            .filter(row => row.vehicle === vehicle)
+            .filter(row => row.vehicleCandidates.includes(vehicle))
             .reduce((sum, row) => sum + row.value, 0),
         }))
         .filter(item => item.value > 0)
@@ -233,9 +236,9 @@ export default function GestaoOperacional() {
   const thirdPartyRevenue = monthRows
     .filter(
       row =>
-        row.vehicle &&
-        !fleet.includes(row.vehicle) &&
-        !costPlates.has(row.vehicle)
+        row.vehicleCandidates.length > 0 &&
+        !row.vehicleCandidates.some(vehicle => fleet.includes(vehicle)) &&
+        !row.vehicleCandidates.some(vehicle => costPlates.has(vehicle))
     )
     .reduce((sum, row) => sum + row.value, 0);
   const thirdPartyCost = thirdRows
