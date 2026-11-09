@@ -384,6 +384,24 @@ export default function Importacao() {
   const importCosts = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.name.toLowerCase().endsWith(".csv")) {
+      const parsedThirdParties = parseThirdPartyCsv(await file.text());
+      if (parsedThirdParties.length) {
+        await saveImportedFile("third-parties", file);
+        localStorage.setItem(
+          "rotaclara-terceiros",
+          JSON.stringify(parsedThirdParties)
+        );
+        localStorage.setItem("rotaclara-terceiros-name", file.name);
+        setThirdPartyRows(parsedThirdParties);
+        setThirdPartyFile(file.name);
+        notifyReportsRefresh();
+        setNotice(
+          `CTRB importado na Base de Custo: ${file.name} (${parsedThirdParties.length} registros)`
+        );
+        return;
+      }
+    }
     const parsed = await readCosts(file);
     await saveImportedFile("costs", file);
     localStorage.setItem("rotaclara-costs", JSON.stringify(parsed));
@@ -609,8 +627,8 @@ export default function Importacao() {
                 </span>
                 <input
                   type="file"
-                  accept=".xlsx,.xls"
-                  onChange={importPedagio}
+                  accept=".xlsx,.xls,.csv,text/csv"
+                  onChange={importCosts}
                 />
               </label>
               <button

@@ -1,46 +1,586 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Check, FileSpreadsheet, LoaderCircle, Search, Wallet } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  FileSpreadsheet,
+  LoaderCircle,
+  Search,
+  Wallet,
+} from "lucide-react";
 import { parseThirdPartyCsv, ThirdPartyRow } from "@/lib/terceiros";
 import { loadFreightRaw } from "@/lib/freightStorage";
 
 import Sidebar from "@/components/Sidebar";
 import MetricComparison from "@/components/MetricComparison";
-const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-const normalize = (value: string) => String(value || "").replace(/[\uFEFF\u00A0]/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+const money = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    value
+  );
+const normalize = (value: string) =>
+  String(value || "")
+    .replace(/[\uFEFF\u00A0]/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 const plateKey = (value: string) => normalize(value).replace(/[\s-]/g, "");
-const num = (value: string) => { const text = String(value || "").replace(/\s/g, ""); if (!text) return 0; return Number(text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text) || 0; };
-const toIso = (value: string) => { const match = String(value || "").match(/(\d{2})\/(\d{2})\/(\d{4})/); return match ? `${match[3]}-${match[2]}-${match[1]}` : ""; };
+const num = (value: string) => {
+  const text = String(value || "").replace(/\s/g, "");
+  if (!text) return 0;
+  return (
+    Number(
+      text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text
+    ) || 0
+  );
+};
+const toIso = (value: string) => {
+  const match = String(value || "").match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+};
 const monthKey = (value: string) => toIso(value).slice(0, 7);
-const monthLabel = (value: string) => new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" }).format(new Date(`${value}-15T12:00:00`)).replace(" de ", "/").toUpperCase();
-const csvRows = (text: string) => { const rows: string[][] = []; const delimiter = (text.split(/\r?\n/, 1)[0] || "").includes(";") ? ";" : ","; let row: string[] = []; let cell = ""; let quoted = false; for (let i = 0; i < text.length; i += 1) { const c = text[i]; const n = text[i + 1]; if (c === '"' && quoted && n === '"') { cell += '"'; i += 1; } else if (c === '"') quoted = !quoted; else if (c === delimiter && !quoted) { row.push(cell.trim()); cell = ""; } else if ((c === "\n" || c === "\r") && !quoted) { if (c === "\r" && n === "\n") i += 1; row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); row = []; cell = ""; } else cell += c; } row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); return rows; };
-const navItem = (route: string, icon: string, label: string, active = false) => active ? <button className="nav-item active"><span className="nav-text-icon">{icon}</span><span>{label}</span><span className="nav-pip" /></button> : <button className="nav-item" onClick={() => { window.location.href = route; }}><span className="nav-text-icon">{icon}</span><span>{label}</span></button>;
+const monthLabel = (value: string) =>
+  new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" })
+    .format(new Date(`${value}-15T12:00:00`))
+    .replace(" de ", "/")
+    .toUpperCase();
+const csvRows = (text: string) => {
+  const rows: string[][] = [];
+  const delimiter = (text.split(/\r?\n/, 1)[0] || "").includes(";") ? ";" : ",";
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    const n = text[i + 1];
+    if (c === '"' && quoted && n === '"') {
+      cell += '"';
+      i += 1;
+    } else if (c === '"') quoted = !quoted;
+    else if (c === delimiter && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((c === "\n" || c === "\r") && !quoted) {
+      if (c === "\r" && n === "\n") i += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += c;
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+};
+const navItem = (route: string, icon: string, label: string, active = false) =>
+  active ? (
+    <button className="nav-item active">
+      <span className="nav-text-icon">{icon}</span>
+      <span>{label}</span>
+      <span className="nav-pip" />
+    </button>
+  ) : (
+    <button
+      className="nav-item"
+      onClick={() => {
+        window.location.href = route;
+      }}
+    >
+      <span className="nav-text-icon">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
 
-type ReceiptRow = { value: number; plate: string; cnpj: string; status: string; date: string };
+type ReceiptRow = {
+  value: number;
+  plate: string;
+  cnpj: string;
+  status: string;
+  date: string;
+};
 export default function Terceiros() {
-  const [rows] = useState<ThirdPartyRow[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]"); } catch { return []; } });
+  const [rows, setRows] = useState<ThirdPartyRow[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]");
+    } catch {
+      return [];
+    }
+  });
   const [receiptRaw, setReceiptRaw] = useState("");
-  const [search, setSearch] = useState(""); const [status, setStatus] = useState("TODOS");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("TODOS");
   const [month, setMonth] = useState("");
   const [loadingBase, setLoadingBase] = useState(true);
-  useEffect(() => { let alive = true; loadFreightRaw().then((raw) => { if (alive && raw) setReceiptRaw(raw); }).catch(() => undefined).finally(() => { if (alive) setLoadingBase(false); }); return () => { alive = false; }; }, []);
-  const receiptRows = useMemo<ReceiptRow[]>(() => { const data = csvRows(receiptRaw); if (data.length < 2) return []; const headers = data[0].map(normalize); const find = (...names: string[]) => names.map(normalize).map((name) => headers.indexOf(name)).find((index) => index >= 0) ?? -1; const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido"); const deliveryIndex = find("veiculo_entrega"); const collectionIndex = find("veiculo_coleta"); const plateIndex = find("placa"); const cnpjIndex = find("pag_cnpj", "cnpj_pagador"); const statusIndex = find("situacao_ctrc", "situacao"); const dateIndex = find("data_emissao", "data"); return data.slice(1).map((cells) => ({ value: num(cells[valueIndex] || ""), plate: plateKey(cells[deliveryIndex] || cells[collectionIndex] || cells[plateIndex] || ""), cnpj: String(cells[cnpjIndex] || "").replace(/\D/g, ""), status: normalize(cells[statusIndex] || ""), date: cells[dateIndex] || "" })).filter((item) => item.value && !["CANCELADO", "CANCELADA"].includes(item.status)); }, [receiptRaw]);
-  const fleetPlates = useMemo(() => { try { return new Set<string>((JSON.parse(localStorage.getItem("rotaclara-fleet-vehicles") || "[]") as string[]).map(plateKey).filter(Boolean)); } catch { return new Set<string>(); } }, []);
-  const aggregatePlates = useMemo(() => { try { const costs = JSON.parse(localStorage.getItem("rotaclara-costs") || "[]") as { plate?: string }[]; return new Set(costs.map((item) => plateKey(item.plate || "")).filter(Boolean)); } catch { return new Set<string>(); } }, []);
-  const availableMonths = useMemo(() => Array.from(new Set([...rows.map((row) => monthKey(row.emissao)), ...receiptRows.map((row) => monthKey(row.date))].filter(Boolean))).sort(), [rows, receiptRows]);
-  useEffect(() => { if (!month && availableMonths.length) setMonth(availableMonths[availableMonths.length - 1]); }, [availableMonths, month]);
+  useEffect(() => {
+    let alive = true;
+    loadFreightRaw()
+      .then(raw => {
+        if (alive && raw) setReceiptRaw(raw);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (alive) setLoadingBase(false);
+      });
+    const refreshBases = () => {
+      try {
+        setRows(
+          JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]")
+        );
+      } catch {
+        setRows([]);
+      }
+    };
+    window.addEventListener("rotaclara-reports-refresh", refreshBases);
+    window.addEventListener("storage", refreshBases);
+    return () => {
+      alive = false;
+      window.removeEventListener("rotaclara-reports-refresh", refreshBases);
+      window.removeEventListener("storage", refreshBases);
+    };
+  }, []);
+  const receiptRows = useMemo<ReceiptRow[]>(() => {
+    const data = csvRows(receiptRaw);
+    if (data.length < 2) return [];
+    const headers = data[0].map(normalize);
+    const find = (...names: string[]) =>
+      names
+        .map(normalize)
+        .map(name => headers.indexOf(name))
+        .find(index => index >= 0) ?? -1;
+    const valueIndex = find("valor_frete", "vlr_liquidado", "valor_liquido");
+    const deliveryIndex = find("veiculo_entrega");
+    const collectionIndex = find("veiculo_coleta");
+    const plateIndex = find("placa");
+    const cnpjIndex = find("pag_cnpj", "cnpj_pagador");
+    const statusIndex = find("situacao_ctrc", "situacao");
+    const dateIndex = find("data_emissao", "data");
+    return data
+      .slice(1)
+      .map(cells => ({
+        value: num(cells[valueIndex] || ""),
+        plate: plateKey(
+          cells[deliveryIndex] ||
+            cells[collectionIndex] ||
+            cells[plateIndex] ||
+            ""
+        ),
+        cnpj: String(cells[cnpjIndex] || "").replace(/\D/g, ""),
+        status: normalize(cells[statusIndex] || ""),
+        date: cells[dateIndex] || "",
+      }))
+      .filter(
+        item => item.value && !["CANCELADO", "CANCELADA"].includes(item.status)
+      );
+  }, [receiptRaw]);
+  const fleetPlates = useMemo(() => {
+    try {
+      return new Set<string>(
+        (
+          JSON.parse(
+            localStorage.getItem("rotaclara-fleet-vehicles") || "[]"
+          ) as string[]
+        )
+          .map(plateKey)
+          .filter(Boolean)
+      );
+    } catch {
+      return new Set<string>();
+    }
+  }, []);
+  const aggregatePlates = useMemo(() => {
+    try {
+      const costs = JSON.parse(
+        localStorage.getItem("rotaclara-costs") || "[]"
+      ) as { plate?: string }[];
+      return new Set(
+        costs.map(item => plateKey(item.plate || "")).filter(Boolean)
+      );
+    } catch {
+      return new Set<string>();
+    }
+  }, []);
+  const availableMonths = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            ...rows.map(row => monthKey(row.emissao)),
+            ...receiptRows.map(row => monthKey(row.date)),
+          ].filter(Boolean)
+        )
+      ).sort(),
+    [rows, receiptRows]
+  );
+  useEffect(() => {
+    if (!month && availableMonths.length)
+      setMonth(availableMonths[availableMonths.length - 1]);
+  }, [availableMonths, month]);
   const inPeriod = (date: string) => !month || monthKey(date) === month;
-  const previousMonth = (() => { const date = new Date(`${month || "2026-01"}-15T12:00:00`); date.setMonth(date.getMonth() - 1); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; })();
-  const metricsForMonth = (target: string) => { const thirdRows = rows.filter((row) => monthKey(row.emissao) === target); const receipts = receiptRows.filter((row) => monthKey(row.date) === target); const cost = thirdRows.reduce((sum, row) => sum + row.total, 0); const revenue = receipts.reduce((sum, row) => sum + row.value, 0); const thirdRevenue = receipts.filter((row) => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)).reduce((sum, row) => sum + row.value, 0); return { cost, liquid: thirdRows.reduce((sum, row) => sum + row.liquid, 0), thirdRate: thirdRevenue ? cost / thirdRevenue * 100 : 0, allRate: revenue ? cost / revenue * 100 : 0 }; };
-  const previousMetrics = useMemo(() => metricsForMonth(previousMonth), [rows, receiptRows, previousMonth, fleetPlates, aggregatePlates]);
-  const periodThirdRows = useMemo(() => rows.filter((row) => inPeriod(row.emissao)), [rows, month]);
-  const periodReceiptRows = useMemo(() => receiptRows.filter((row) => inPeriod(row.date)), [receiptRows, month]);
-  const total = periodThirdRows.reduce((sum, row) => sum + row.total, 0); const km = periodThirdRows.reduce((sum, row) => sum + row.km, 0); const liquid = periodThirdRows.reduce((sum, row) => sum + row.liquid, 0);
-  const totalRevenue = periodReceiptRows.reduce((sum, row) => sum + row.value, 0); const thirdPartyRevenue = periodReceiptRows.filter((row) => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)).reduce((sum, row) => sum + row.value, 0);
-  const costOverThirdPartyFreight = thirdPartyRevenue ? total / thirdPartyRevenue * 100 : 0; const costOverAllFreight = totalRevenue ? total / totalRevenue * 100 : 0;
-  const monthly = useMemo(() => { const keys = availableMonths; return keys.map((period) => { const cost = rows.filter((row) => monthKey(row.emissao) === period).reduce((sum, row) => sum + row.total, 0); const all = receiptRows.filter((row) => monthKey(row.date) === period); const revenue = all.reduce((sum, row) => sum + row.value, 0); const thirdRevenue = all.filter((row) => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)).reduce((sum, row) => sum + row.value, 0); return { month: period, cost, allRate: revenue ? cost / revenue * 100 : 0, thirdRate: thirdRevenue ? cost / thirdRevenue * 100 : 0 }; }); }, [availableMonths, rows, receiptRows, fleetPlates, aggregatePlates]);
-  const maxRate = Math.max(...monthly.flatMap((item) => [item.allRate, item.thirdRate]), 1);
-  const filtered = periodThirdRows.filter((row) => { const term = normalize(search); return (!term || [row.ctrb, row.plate, row.owner, row.origin, row.destination].some((value) => normalize(value).includes(term))) && (status === "TODOS" || normalize(row.situacao) === status); });
-  const statuses = Array.from(new Set(periodThirdRows.map((row) => normalize(row.situacao)).filter(Boolean))).sort();
-  const useLatestMonth = () => setMonth(availableMonths[availableMonths.length - 1] || "");
-  return <div className="app-shell"><Sidebar /><main className="main-content">{loadingBase && <div className="report-loading"><LoaderCircle size={18} className="spin" /><span>Carregando a base mais recente...</span></div>}<header className="topbar"><div className="breadcrumbs"><span>Operação</span><span>/</span><strong>Terceiros</strong></div><div className="topbar-actions"><span className="last-sync"><span className="sync-dot" /> Base local · agora</span><button className="topbar-avatar">RC</button></div></header><div className="content-wrap"><section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> VISUALIZAÇÃO OPERACIONAL</div><h1>Terceiros <em>em foco.</em></h1><p>Analise custos, receitas e evolução mensal dos transportadores terceiros.</p></div></section><section className="period-filter third-party-period-filter"><div className="period-filter-heading"><div><div className="section-kicker"><BarChart3 size={14} /> COMPETÊNCIA MENSAL</div><h2>Selecione o mês da análise</h2></div><button type="button" className="text-action" onClick={useLatestMonth}>Mês mais recente <Check size={14} /></button></div><div className="period-fields"><label>Mês de referência<input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label><div className="period-rule"><Check size={14} /> Período fechado do mês · cancelados excluídos</div></div></section><section className="metric-grid third-party-metrics"><div className="metric-card"><span>Valor líquido</span><strong>{money(liquid)}</strong><MetricComparison current={liquid} previous={previousMetrics.liquid} /></div><div className="metric-card third-party-rate-card"><span>Custo terceiro sobre frete de terceiros</span><strong>{costOverThirdPartyFreight.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%</strong><small>{money(total)} ÷ {money(thirdPartyRevenue)} · receita sem frota e sem base de custos</small><MetricComparison current={costOverThirdPartyFreight} previous={previousMetrics.thirdRate} kind="points" /></div><div className="metric-card third-party-rate-card"><span>Custo terceiro sobre todos os fretes</span><strong>{costOverAllFreight.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%</strong><small>{money(total)} ÷ {money(totalRevenue)} · Base de Receita</small><MetricComparison current={costOverAllFreight} previous={previousMetrics.allRate} kind="points" /></div><div className="metric-card third-party-absolute-card"><span>Custo absoluto de terceiros</span><strong>{money(total)}</strong><MetricComparison current={total} previous={previousMetrics.cost} /></div></section><section className="third-party-evolution-card"><div className="chart-card-heading"><div><span className="section-kicker"><BarChart3 size={13} /> EVOLUÇÃO MENSAL</span><h2>Histórico dos indicadores de custo</h2><p>Percentual do custo dos terceiros sobre cada base de receita, em todos os meses disponíveis.</p></div></div><div className="third-party-chart">{monthly.length ? monthly.map((item) => <div className="third-party-chart-column" key={item.month}><div className="third-party-bars"><div className="third-party-bar third-party-bar-purple" style={{ height: `${Math.max(3, item.thirdRate / maxRate * 100)}%` }} title={`Frete de terceiros: ${item.thirdRate.toFixed(2)}%`}><span>{item.thirdRate.toFixed(2)}%</span></div><div className="third-party-bar third-party-bar-blue" style={{ height: `${Math.max(3, item.allRate / maxRate * 100)}%` }} title={`Todos os fretes: ${item.allRate.toFixed(2)}%`}><span>{item.allRate.toFixed(2)}%</span></div></div><strong>{monthLabel(item.month)}</strong></div>) : <div className="table-empty">Sem dados mensais no período selecionado.</div>}</div><div className="chart-legend"><span><i className="third-party-legend-purple" /> Custo / frete de terceiros</span><span><i className="third-party-legend-blue" /> Custo / todos os fretes</span></div></section><section className="table-card third-party-table-card"><div className="table-card-heading"><div><span className="section-kicker">CONSULTA</span><h2>Detalhamento dos terceiros</h2><p>{filtered.length.toLocaleString("pt-BR")} de {periodThirdRows.length.toLocaleString("pt-BR")} registros exibidos</p></div><div className="table-filters"><label className="table-search"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar CTRB, placa ou cidade" /></label><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="TODOS">Todos os status</option>{statuses.map((item) => <option key={item} value={item}>{item}</option>)}</select></div></div>{periodThirdRows.length ? <div className="table-scroll"><table><thead><tr><th>CTRB</th><th>Situação</th><th>Emissão</th><th>Placa</th><th>Origem / destino</th><th>KM</th><th>Total</th><th>Líquido</th></tr></thead><tbody>{filtered.slice(0, 100).map((row, index) => <tr key={`${row.ctrb}-${index}`}><td><strong>{row.ctrb || "—"}</strong><small>{row.tipo}</small></td><td><span className="status-pill">{row.situacao || "—"}</span></td><td>{row.emissao || "—"}</td><td><strong>{row.plate || "—"}</strong><small>{row.owner}</small></td><td><strong>{row.origin || "—"}</strong><small>→ {row.destination || "—"}</small></td><td>{row.km.toLocaleString("pt-BR")}</td><td>{money(row.total)}</td><td>{money(row.liquid)}</td></tr>)}</tbody></table>{filtered.length > 100 && <div className="table-more">Mostrando os 100 primeiros registros filtrados.</div>}</div> : <div className="third-party-empty"><FileSpreadsheet size={28} /><strong>Sem registros no período selecionado</strong><span>Ajuste as datas ou importe a base de Terceiros.</span></div>}</section><div className="data-note"><Check size={15} /> Os indicadores respeitam a competência mensal selecionada, excluem cancelados e usam os cadastros de frota e agregados.</div></div></main></div>;
+  const previousMonth = (() => {
+    const date = new Date(`${month || "2026-01"}-15T12:00:00`);
+    date.setMonth(date.getMonth() - 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  })();
+  const metricsForMonth = (target: string) => {
+    const thirdRows = rows.filter(row => monthKey(row.emissao) === target);
+    const receipts = receiptRows.filter(row => monthKey(row.date) === target);
+    const cost = thirdRows.reduce((sum, row) => sum + row.liquid, 0);
+    const revenue = receipts.reduce((sum, row) => sum + row.value, 0);
+    const thirdRevenue = receipts
+      .filter(
+        row => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)
+      )
+      .reduce((sum, row) => sum + row.value, 0);
+    return {
+      cost,
+      liquid: cost,
+      thirdRate: thirdRevenue ? (cost / thirdRevenue) * 100 : 0,
+      allRate: revenue ? (cost / revenue) * 100 : 0,
+    };
+  };
+  const previousMetrics = useMemo(
+    () => metricsForMonth(previousMonth),
+    [rows, receiptRows, previousMonth, fleetPlates, aggregatePlates]
+  );
+  const periodThirdRows = useMemo(
+    () => rows.filter(row => inPeriod(row.emissao)),
+    [rows, month]
+  );
+  const periodReceiptRows = useMemo(
+    () => receiptRows.filter(row => inPeriod(row.date)),
+    [receiptRows, month]
+  );
+  const total = periodThirdRows.reduce((sum, row) => sum + row.liquid, 0);
+  const km = periodThirdRows.reduce((sum, row) => sum + row.km, 0);
+  const liquid = total;
+  const totalRevenue = periodReceiptRows.reduce(
+    (sum, row) => sum + row.value,
+    0
+  );
+  const thirdPartyRevenue = periodReceiptRows
+    .filter(
+      row => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)
+    )
+    .reduce((sum, row) => sum + row.value, 0);
+  const costOverThirdPartyFreight = thirdPartyRevenue
+    ? (total / thirdPartyRevenue) * 100
+    : 0;
+  const costOverAllFreight = totalRevenue ? (total / totalRevenue) * 100 : 0;
+  const monthly = useMemo(() => {
+    const keys = availableMonths;
+    return keys.map(period => {
+      const cost = rows
+        .filter(row => monthKey(row.emissao) === period)
+        .reduce((sum, row) => sum + row.liquid, 0);
+      const all = receiptRows.filter(row => monthKey(row.date) === period);
+      const revenue = all.reduce((sum, row) => sum + row.value, 0);
+      const thirdRevenue = all
+        .filter(
+          row => !fleetPlates.has(row.plate) && !aggregatePlates.has(row.plate)
+        )
+        .reduce((sum, row) => sum + row.value, 0);
+      return {
+        month: period,
+        cost,
+        allRate: revenue ? (cost / revenue) * 100 : 0,
+        thirdRate: thirdRevenue ? (cost / thirdRevenue) * 100 : 0,
+      };
+    });
+  }, [availableMonths, rows, receiptRows, fleetPlates, aggregatePlates]);
+  const maxRate = Math.max(
+    ...monthly.flatMap(item => [item.allRate, item.thirdRate]),
+    1
+  );
+  const filtered = periodThirdRows.filter(row => {
+    const term = normalize(search);
+    return (
+      (!term ||
+        [row.ctrb, row.plate, row.owner, row.origin, row.destination].some(
+          value => normalize(value).includes(term)
+        )) &&
+      (status === "TODOS" || normalize(row.situacao) === status)
+    );
+  });
+  const statuses = Array.from(
+    new Set(periodThirdRows.map(row => normalize(row.situacao)).filter(Boolean))
+  ).sort();
+  const useLatestMonth = () =>
+    setMonth(availableMonths[availableMonths.length - 1] || "");
+  return (
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        {loadingBase && (
+          <div className="report-loading">
+            <LoaderCircle size={18} className="spin" />
+            <span>Carregando a base mais recente...</span>
+          </div>
+        )}
+        <header className="topbar">
+          <div className="breadcrumbs">
+            <span>Operação</span>
+            <span>/</span>
+            <strong>Terceiros</strong>
+          </div>
+          <div className="topbar-actions">
+            <span className="last-sync">
+              <span className="sync-dot" /> Base local · agora
+            </span>
+            <button className="topbar-avatar">RC</button>
+          </div>
+        </header>
+        <div className="content-wrap">
+          <section className="page-heading">
+            <div>
+              <div className="eyebrow">
+                <span className="eyebrow-line" /> VISUALIZAÇÃO OPERACIONAL
+              </div>
+              <h1>
+                Terceiros <em>em foco.</em>
+              </h1>
+              <p>
+                Analise custos, receitas e evolução mensal dos transportadores
+                terceiros.
+              </p>
+            </div>
+          </section>
+          <section className="period-filter third-party-period-filter">
+            <div className="period-filter-heading">
+              <div>
+                <div className="section-kicker">
+                  <BarChart3 size={14} /> COMPETÊNCIA MENSAL
+                </div>
+                <h2>Selecione o mês da análise</h2>
+              </div>
+              <button
+                type="button"
+                className="text-action"
+                onClick={useLatestMonth}
+              >
+                Mês mais recente <Check size={14} />
+              </button>
+            </div>
+            <div className="period-fields">
+              <label>
+                Mês de referência
+                <input
+                  type="month"
+                  value={month}
+                  onChange={event => setMonth(event.target.value)}
+                />
+              </label>
+              <div className="period-rule">
+                <Check size={14} /> Período fechado do mês · cancelados
+                excluídos
+              </div>
+            </div>
+          </section>
+          <section className="metric-grid third-party-metrics">
+            <div className="metric-card">
+              <span>Valor líquido</span>
+              <strong>{money(liquid)}</strong>
+              <MetricComparison
+                current={liquid}
+                previous={previousMetrics.liquid}
+              />
+            </div>
+            <div className="metric-card third-party-rate-card">
+              <span>Custo terceiro sobre frete de terceiros</span>
+              <strong>
+                {costOverThirdPartyFreight.toLocaleString("pt-BR", {
+                  maximumFractionDigits: 2,
+                })}
+                %
+              </strong>
+              <small>
+                {money(total)} ÷ {money(thirdPartyRevenue)} · receita sem frota
+                e sem base de custos
+              </small>
+              <MetricComparison
+                current={costOverThirdPartyFreight}
+                previous={previousMetrics.thirdRate}
+                kind="points"
+              />
+            </div>
+            <div className="metric-card third-party-rate-card">
+              <span>Custo terceiro sobre todos os fretes</span>
+              <strong>
+                {costOverAllFreight.toLocaleString("pt-BR", {
+                  maximumFractionDigits: 2,
+                })}
+                %
+              </strong>
+              <small>
+                {money(total)} ÷ {money(totalRevenue)} · Base de Receita
+              </small>
+              <MetricComparison
+                current={costOverAllFreight}
+                previous={previousMetrics.allRate}
+                kind="points"
+              />
+            </div>
+            <div className="metric-card third-party-absolute-card">
+              <span>Custo absoluto de terceiros</span>
+              <strong>{money(total)}</strong>
+              <MetricComparison
+                current={total}
+                previous={previousMetrics.cost}
+              />
+            </div>
+          </section>
+          <section className="third-party-evolution-card">
+            <div className="chart-card-heading">
+              <div>
+                <span className="section-kicker">
+                  <BarChart3 size={13} /> EVOLUÇÃO MENSAL
+                </span>
+                <h2>Histórico dos indicadores de custo</h2>
+                <p>
+                  Percentual do custo dos terceiros sobre cada base de receita,
+                  em todos os meses disponíveis.
+                </p>
+              </div>
+            </div>
+            <div className="third-party-chart">
+              {monthly.length ? (
+                monthly.map(item => (
+                  <div className="third-party-chart-column" key={item.month}>
+                    <div className="third-party-bars">
+                      <div
+                        className="third-party-bar third-party-bar-purple"
+                        style={{
+                          height: `${Math.max(3, (item.thirdRate / maxRate) * 100)}%`,
+                        }}
+                        title={`Frete de terceiros: ${item.thirdRate.toFixed(2)}%`}
+                      >
+                        <span>{item.thirdRate.toFixed(2)}%</span>
+                      </div>
+                      <div
+                        className="third-party-bar third-party-bar-blue"
+                        style={{
+                          height: `${Math.max(3, (item.allRate / maxRate) * 100)}%`,
+                        }}
+                        title={`Todos os fretes: ${item.allRate.toFixed(2)}%`}
+                      >
+                        <span>{item.allRate.toFixed(2)}%</span>
+                      </div>
+                    </div>
+                    <strong>{monthLabel(item.month)}</strong>
+                  </div>
+                ))
+              ) : (
+                <div className="table-empty">
+                  Sem dados mensais no período selecionado.
+                </div>
+              )}
+            </div>
+            <div className="chart-legend">
+              <span>
+                <i className="third-party-legend-purple" /> Custo / frete de
+                terceiros
+              </span>
+              <span>
+                <i className="third-party-legend-blue" /> Custo / todos os
+                fretes
+              </span>
+            </div>
+          </section>
+          <section className="table-card third-party-table-card">
+            <div className="table-card-heading">
+              <div>
+                <span className="section-kicker">CONSULTA</span>
+                <h2>Detalhamento dos terceiros</h2>
+                <p>
+                  {filtered.length.toLocaleString("pt-BR")} de{" "}
+                  {periodThirdRows.length.toLocaleString("pt-BR")} registros
+                  exibidos
+                </p>
+              </div>
+              <div className="table-filters">
+                <label className="table-search">
+                  <Search size={15} />
+                  <input
+                    value={search}
+                    onChange={event => setSearch(event.target.value)}
+                    placeholder="Buscar CTRB, placa ou cidade"
+                  />
+                </label>
+                <select
+                  value={status}
+                  onChange={event => setStatus(event.target.value)}
+                >
+                  <option value="TODOS">Todos os status</option>
+                  {statuses.map(item => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {periodThirdRows.length ? (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>CTRB</th>
+                      <th>Situação</th>
+                      <th>Emissão</th>
+                      <th>Placa</th>
+                      <th>Origem / destino</th>
+                      <th>KM</th>
+                      <th>Total</th>
+                      <th>Líquido</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.slice(0, 100).map((row, index) => (
+                      <tr key={`${row.ctrb}-${index}`}>
+                        <td>
+                          <strong>{row.ctrb || "—"}</strong>
+                          <small>{row.tipo}</small>
+                        </td>
+                        <td>
+                          <span className="status-pill">
+                            {row.situacao || "—"}
+                          </span>
+                        </td>
+                        <td>{row.emissao || "—"}</td>
+                        <td>
+                          <strong>{row.plate || "—"}</strong>
+                          <small>{row.owner}</small>
+                        </td>
+                        <td>
+                          <strong>{row.origin || "—"}</strong>
+                          <small>→ {row.destination || "—"}</small>
+                        </td>
+                        <td>{row.km.toLocaleString("pt-BR")}</td>
+                        <td>{money(row.total)}</td>
+                        <td>{money(row.liquid)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filtered.length > 100 && (
+                  <div className="table-more">
+                    Mostrando os 100 primeiros registros filtrados.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="third-party-empty">
+                <FileSpreadsheet size={28} />
+                <strong>Sem registros no período selecionado</strong>
+                <span>Ajuste as datas ou importe a base de Terceiros.</span>
+              </div>
+            )}
+          </section>
+          <div className="data-note">
+            <Check size={15} /> Os indicadores respeitam a competência mensal
+            selecionada, excluem cancelados e usam os cadastros de frota e
+            agregados.
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
