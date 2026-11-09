@@ -10,7 +10,6 @@ import {
   YAxis,
 } from "recharts";
 import { loadFreightRaw } from "@/lib/freightStorage";
-import { ThirdPartyRow } from "@/lib/terceiros";
 
 type Row = {
   date: string;
@@ -21,7 +20,7 @@ type Row = {
   payer: string;
   returnMarked: boolean;
 };
-type CostRow = { plate?: string };
+type CostRow = { plate?: string; date?: string; cost?: number };
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -163,18 +162,13 @@ export default function GestaoOperacional() {
         .filter(Boolean),
     []
   );
-  const thirdRows = useMemo(
-    () => readJson<ThirdPartyRow[]>("rotaclara-terceiros", []),
+  const costRows = useMemo(
+    () => readJson<CostRow[]>("rotaclara-costs", []),
     []
   );
   const costPlates = useMemo(
-    () =>
-      new Set(
-        readJson<CostRow[]>("rotaclara-costs", [])
-          .map(item => plate(item.plate))
-          .filter(Boolean)
-      ),
-    []
+    () => new Set(costRows.map(item => plate(item.plate)).filter(Boolean)),
+    [costRows]
   );
   const fixedOperations = useMemo(
     () =>
@@ -249,13 +243,9 @@ export default function GestaoOperacional() {
         !row.vehicleCandidates.some(vehicle => costPlates.has(vehicle))
     )
     .reduce((sum, row) => sum + row.value, 0);
-  const thirdPartyCost = thirdRows
-    .filter(
-      row =>
-        isoDate(row.emissao).startsWith(month) &&
-        !["cancelado", "cancelada"].includes(normalize(row.situacao))
-    )
-    .reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const thirdPartyCost = costRows
+    .filter(row => String(row.date || "").startsWith(month))
+    .reduce((sum, row) => sum + Number(row.cost || 0), 0);
   const rate = thirdPartyRevenue
     ? (thirdPartyCost / thirdPartyRevenue) * 100
     : null;

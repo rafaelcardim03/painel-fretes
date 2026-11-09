@@ -1,42 +1,668 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { BarChart3, Check, Database, Download, FileSpreadsheet, LineChart, LoaderCircle, RefreshCw, Upload, Wallet } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  Database,
+  Download,
+  FileSpreadsheet,
+  LineChart,
+  LoaderCircle,
+  RefreshCw,
+  Upload,
+  Wallet,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import { parseThirdPartyCsv } from "@/lib/terceiros";
-import { loadFreightRaw, notifyReportsRefresh, saveFreightRaw } from "@/lib/freightStorage";
-import { downloadImportedFile, saveImportedFile } from "@/lib/importedFileStorage";
+import {
+  loadFreightRaw,
+  notifyReportsRefresh,
+  saveFreightRaw,
+} from "@/lib/freightStorage";
+import {
+  downloadImportedFile,
+  saveImportedFile,
+} from "@/lib/importedFileStorage";
 
 import Sidebar from "@/components/Sidebar";
-type CostRow = { date: string; km: number; cost: number; plate: string; driver: string };
+type CostRow = {
+  date: string;
+  km: number;
+  cost: number;
+  plate: string;
+  driver: string;
+};
 type TollRow = { plate: string; value: number; date?: string };
-const money = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-const num = (v: unknown) => { const x = String(v ?? "").replace(/\s/g, ""); return Number(x.includes(",") ? x.replace(/\./g, "").replace(",", ".") : x) || 0; };
-const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-const excelDate = (value: unknown) => { if (value instanceof Date) return value.toISOString().slice(0, 10); const text = String(value || ""); const br = text.match(/(\d{2})\/(\d{2})\/(\d{4})/); return br ? `${br[3]}-${br[2]}-${br[1]}` : text.slice(0, 10); };
-const readCosts = async (file: File): Promise<CostRow[]> => { const buffer = await file.arrayBuffer(); const book = XLSX.read(buffer, { type: "array", cellDates: true }); const sheet = book.Sheets[book.SheetNames[0]]; const values = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" }); const key = (row: Record<string, unknown>, name: string) => Object.keys(row).find((k) => norm(k) === norm(name)) || name; return values.map((r) => ({ date: excelDate(r[key(r, "DIA")]), km: num(r[key(r, "KM RODADO")]), cost: num(r[key(r, "FRETE TOTAL")]), plate: String(r[key(r, "PLACA")] || ""), driver: String(r[key(r, "MOTORISTA")] || "") })).filter((r) => r.cost || r.km); };
-const readPedagio = async (file: File): Promise<TollRow[]> => { const buffer = await file.arrayBuffer(); const book = XLSX.read(buffer, { type: "array", cellDates: true }); const sheet = book.Sheets[book.SheetNames[0]]; const values = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" }); return values.slice(1).map((row) => ({ plate: String(row[3] ?? "").trim().toUpperCase(), value: num(row[7]), date: row.map((cell) => excelDate(cell)).find((value) => /^\d{4}-\d{2}-\d{2}$/.test(value)) })).filter((row) => row.plate || row.value); };
-const readFreightValue = (raw: string) => { const first = raw.split(/\r?\n/, 1)[0] || ""; const delimiter = first.includes(";") ? ";" : first.includes("\t") ? "\t" : ","; const rows: string[][] = []; let current: string[] = []; let cell = ""; let quoted = false; for (let i = 0; i < raw.length; i += 1) { const c = raw[i]; const next = raw[i + 1]; if (c === '"' && quoted && next === '"') { cell += '"'; i += 1; } else if (c === '"') quoted = !quoted; else if (c === delimiter && !quoted) { current.push(cell.trim()); cell = ""; } else if ((c === "\n" || c === "\r") && !quoted) { if (c === "\r" && next === "\n") i += 1; current.push(cell.trim()); if (current.some(Boolean)) rows.push(current); current = []; cell = ""; } else cell += c; } current.push(cell.trim()); if (current.some(Boolean)) rows.push(current); if (rows.length < 2) return 0; const headers = rows[0].map(norm); const index = headers.findIndex((x) => ["valor_frete", "vlr_liquidado", "valor_liquido"].includes(x)); const cnpj = headers.indexOf("pag_cnpj"); let targets = ["42580092004325", "02865246001476"]; try { const saved = JSON.parse(localStorage.getItem("rotaclara-aggregate-clients") || "[]"); if (saved.length) targets = saved.map((item: { cnpj: string }) => item.cnpj.replace(/\D/g, "")); } catch { /* defaults */ } return rows.slice(1).reduce((sum, cells) => targets.includes(String(cells[cnpj] || "").replace(/\D/g, "")) ? sum + num(cells[index]) : sum, 0); };
+const money = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    v
+  );
+const num = (v: unknown) => {
+  const x = String(v ?? "").replace(/\s/g, "");
+  return (
+    Number(x.includes(",") ? x.replace(/\./g, "").replace(",", ".") : x) || 0
+  );
+};
+const norm = (v: string) =>
+  v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+const excelDate = (value: unknown) => {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const text = String(value || "");
+  const br = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return br ? `${br[3]}-${br[2]}-${br[1]}` : text.slice(0, 10);
+};
+const readCosts = async (file: File): Promise<CostRow[]> => {
+  const buffer = await file.arrayBuffer();
+  const book = XLSX.read(buffer, { type: "array", cellDates: true });
+  const sheet = book.Sheets[book.SheetNames[0]];
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: "",
+  });
+  const cleanHeader = (value: unknown) =>
+    norm(String(value || "")).replace(/^soma de /, "");
+  const headerIndex = matrix.findIndex(row => {
+    const headers = row.map(cleanHeader);
+    return (
+      headers.includes("placa") &&
+      headers.some(header =>
+        ["frete total", "valor frete", "custo"].includes(header)
+      )
+    );
+  });
+  if (headerIndex < 0) return [];
+  const headers = matrix[headerIndex].map(cleanHeader);
+  const index = (...names: string[]) =>
+    names.map(name => headers.indexOf(norm(name))).find(value => value >= 0) ??
+    -1;
+  const dateIndex = index("dia", "data");
+  const kmIndex = index("km rodado", "distancia km", "km");
+  const costIndex = index("frete total", "valor frete", "custo");
+  const plateIndex = index("placa", "veiculo", "veículo");
+  const driverIndex = index("motorista");
+  return matrix
+    .slice(headerIndex + 1)
+    .map(row => ({
+      date: excelDate(row[dateIndex]),
+      km: num(row[kmIndex]),
+      cost: num(row[costIndex]),
+      plate: String(row[plateIndex] || ""),
+      driver: String(row[driverIndex] || ""),
+    }))
+    .filter(
+      row =>
+        !/^total geral$/i.test(row.plate.trim()) &&
+        (row.cost || row.km || row.plate)
+    );
+};
+const readPedagio = async (file: File): Promise<TollRow[]> => {
+  const buffer = await file.arrayBuffer();
+  const book = XLSX.read(buffer, { type: "array", cellDates: true });
+  const sheet = book.Sheets[book.SheetNames[0]];
+  const values = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: "",
+  });
+  return values
+    .slice(1)
+    .map(row => ({
+      plate: String(row[3] ?? "")
+        .trim()
+        .toUpperCase(),
+      value: num(row[7]),
+      date: row
+        .map(cell => excelDate(cell))
+        .find(value => /^\d{4}-\d{2}-\d{2}$/.test(value)),
+    }))
+    .filter(row => row.plate || row.value);
+};
+const readFreightValue = (raw: string) => {
+  const first = raw.split(/\r?\n/, 1)[0] || "";
+  const delimiter = first.includes(";")
+    ? ";"
+    : first.includes("\t")
+      ? "\t"
+      : ",";
+  const rows: string[][] = [];
+  let current: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < raw.length; i += 1) {
+    const c = raw[i];
+    const next = raw[i + 1];
+    if (c === '"' && quoted && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (c === '"') quoted = !quoted;
+    else if (c === delimiter && !quoted) {
+      current.push(cell.trim());
+      cell = "";
+    } else if ((c === "\n" || c === "\r") && !quoted) {
+      if (c === "\r" && next === "\n") i += 1;
+      current.push(cell.trim());
+      if (current.some(Boolean)) rows.push(current);
+      current = [];
+      cell = "";
+    } else cell += c;
+  }
+  current.push(cell.trim());
+  if (current.some(Boolean)) rows.push(current);
+  if (rows.length < 2) return 0;
+  const headers = rows[0].map(norm);
+  const index = headers.findIndex(x =>
+    ["valor_frete", "vlr_liquidado", "valor_liquido"].includes(x)
+  );
+  const cnpj = headers.indexOf("pag_cnpj");
+  let targets = ["42580092004325", "02865246001476"];
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("rotaclara-aggregate-clients") || "[]"
+    );
+    if (saved.length)
+      targets = saved.map((item: { cnpj: string }) =>
+        item.cnpj.replace(/\D/g, "")
+      );
+  } catch {
+    /* defaults */
+  }
+  return rows
+    .slice(1)
+    .reduce(
+      (sum, cells) =>
+        targets.includes(String(cells[cnpj] || "").replace(/\D/g, ""))
+          ? sum + num(cells[index])
+          : sum,
+      0
+    );
+};
 
 export default function Importacao() {
-  const [freightFile, setFreightFile] = useState(() => localStorage.getItem("rotaclara-fretes-name") || (localStorage.getItem("rotaclara-csv") ? "bd.csv" : "bd.csv"));
-  const [costFile, setCostFile] = useState(localStorage.getItem("rotaclara-costs-name") || "");
-  const [pedagioFile, setPedagioFile] = useState(localStorage.getItem("rotaclara-pedagio-name") || "");
-  const [pedagioRows, setPedagioRows] = useState<TollRow[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-pedagio") || "[]"); } catch { return []; } });
-  const [thirdPartyFile, setThirdPartyFile] = useState(localStorage.getItem("rotaclara-terceiros-name") || "");
-  const [thirdPartyRows, setThirdPartyRows] = useState(() => { try { return JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]"); } catch { return []; } });
-  const [costRows, setCostRows] = useState<CostRow[]>(() => { try { return JSON.parse(localStorage.getItem("rotaclara-costs") || "[]"); } catch { return []; } });
-  const [freightTotal, setFreightTotal] = useState(() => { const raw = localStorage.getItem("rotaclara-csv"); return raw ? readFreightValue(raw) : num(localStorage.getItem("rotaclara-aggregate-billed") || "156078.79"); });
-  const [notice, setNotice] = useState(""); const [processing, setProcessing] = useState(false); const [refreshing, setRefreshing] = useState(false);
-  const downloadBlob = (content: BlobPart, name: string, type: string) => { const url = URL.createObjectURL(new Blob([content], { type })); const link = document.createElement("a"); link.href = url; link.download = name; link.style.display = "none"; document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); };
-  const rowsCsv = (rows: Record<string, unknown>[]) => { if (!rows.length) return ""; const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row)))); const quote = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`; return [keys.join(";"), ...rows.map((row) => keys.map((key) => quote(row[key])).join(";"))].join("\n"); };
-  const downloadFile = async (key: string, label: string) => { const aliases = key === "tolls" ? ["tolls", "pedagio"] : key === "third-parties" ? ["third-parties", "terceiros"] : [key]; let ok = false; for (const alias of aliases) { if (await downloadImportedFile(alias)) { ok = true; break; } } if (ok) { setNotice(`Download iniciado: ${label}`); return; } if (key === "tolls" && pedagioRows.length) { downloadBlob(rowsCsv(pedagioRows as unknown as Record<string, unknown>[]), pedagioFile || "pedagio.csv", "text/csv;charset=utf-8"); setNotice(`Download dos dados persistidos iniciado: ${label}`); return; } if (key === "third-parties" && thirdPartyRows.length) { downloadBlob(rowsCsv(thirdPartyRows as unknown as Record<string, unknown>[]), thirdPartyFile || "terceiros.csv", "text/csv;charset=utf-8"); setNotice(`Download dos dados persistidos iniciado: ${label}`); return; } if (key === "freights") { const raw = await loadFreightRaw(); if (raw) { downloadBlob(raw, freightFile || "fretes.csv", "text/csv;charset=utf-8"); setNotice(`Download iniciado: ${label}`); return; } } if (key === "costs" && costRows.length) { downloadBlob(rowsCsv(costRows as unknown as Record<string, unknown>[]), costFile || "custos.csv", "text/csv;charset=utf-8"); setNotice(`Download dos dados persistidos iniciado: ${label}`); return; } setNotice(`O arquivo de ${label} ainda não está disponível. Importe novamente para habilitar o download original.`); };
-  const downloadAll = async () => { for (const [key, label] of [["freights", "fretes"], ["costs", "custos dos agregados"], ["tolls", "pedágio"], ["third-parties", "Terceiros"]] as const) await downloadFile(key, label); setNotice("Downloads dos arquivos disponíveis foram iniciados."); };
-  useEffect(() => { const existing = localStorage.getItem("rotaclara-csv"); if (existing) { const total = readFreightValue(existing); localStorage.setItem("rotaclara-aggregate-billed", String(total)); setFreightFile(localStorage.getItem("rotaclara-fretes-name") || "bd.csv"); setFreightTotal(total); return; } fetch("/manus-storage/bd_457495e8.csv").then((r) => r.text()).then((raw) => { const total = readFreightValue(raw); localStorage.setItem("rotaclara-csv", raw); localStorage.setItem("rotaclara-fretes-name", "bd.csv"); localStorage.setItem("rotaclara-aggregate-billed", String(total)); setFreightFile("bd.csv"); setFreightTotal(total); }).catch(() => undefined); }, []);
-  useEffect(() => { const source = "/manus-storage/FRETES_FIORINO_210c2b0f.xlsx"; const existing = localStorage.getItem("rotaclara-costs"); const sourceKnown = localStorage.getItem("rotaclara-costs-source"); if (existing && sourceKnown) return; fetch(source).then((r) => r.blob()).then(async (blob) => { const parsed = await readCosts(new File([blob], "FRETES_FIORINO.xlsx")); if (parsed.length) { localStorage.setItem("rotaclara-costs", JSON.stringify(parsed)); localStorage.setItem("rotaclara-costs-name", "FRETES_FIORINO.xlsx"); localStorage.setItem("rotaclara-costs-source", source); setCostRows(parsed); setCostFile("FRETES_FIORINO.xlsx"); } }).catch(() => undefined); }, []);
-  const importFreights = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { try { const raw = String(reader.result || ""); const storage = await saveFreightRaw(raw); await saveImportedFile("freights", file); localStorage.setItem("rotaclara-fretes-name", file.name); const total = readFreightValue(raw); localStorage.setItem("rotaclara-aggregate-billed", String(total)); setFreightFile(file.name); setFreightTotal(total); setNotice(`Fretes importados: ${file.name} (${storage === "indexeddb" ? "base grande salva com segurança" : "base salva"})`); } catch { setNotice("Não foi possível salvar o arquivo. Libere espaço do navegador e tente novamente."); } }; reader.readAsText(file, "UTF-8"); };
-  const importCosts = async (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const parsed = await readCosts(file); await saveImportedFile("costs", file); localStorage.setItem("rotaclara-costs", JSON.stringify(parsed)); localStorage.setItem("rotaclara-costs-name", file.name); localStorage.setItem("rotaclara-costs-source", `manual:${file.name}`); setCostRows(parsed); setCostFile(file.name); setNotice(`Custos importados: ${file.name}`); };
-  const importPedagio = async (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const parsed = await readPedagio(file); await saveImportedFile("tolls", file); localStorage.setItem("rotaclara-pedagio", JSON.stringify(parsed)); localStorage.setItem("rotaclara-pedagio-name", file.name); setPedagioRows(parsed); setPedagioFile(file.name); setNotice(`Pedágio importado: ${file.name}`); };
-  const importThirdParties = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const parsed = parseThirdPartyCsv(String(reader.result || "")); if (!parsed.length) { setNotice("Não foi possível identificar registros de Terceiros neste arquivo."); return; } await saveImportedFile("third-parties", file); localStorage.setItem("rotaclara-terceiros", JSON.stringify(parsed)); localStorage.setItem("rotaclara-terceiros-name", file.name); setThirdPartyRows(parsed); setThirdPartyFile(file.name); setNotice(`Terceiros importados: ${file.name}`); }; reader.readAsText(file, "windows-1252"); };
-  const totalCost = costRows.reduce((s, r) => s + r.cost, 0); const profit = freightTotal - totalCost; const totalKm = costRows.reduce((s, r) => s + r.km, 0); const days = useMemo(() => Array.from(new Set(costRows.map((r) => r.date))).sort().slice(0, 14), [costRows]); const daily = days.map((date) => ({ date, cost: costRows.filter((r) => r.date === date).reduce((s, r) => s + r.cost, 0), km: costRows.filter((r) => r.date === date).reduce((s, r) => s + r.km, 0) })); const max = Math.max(totalCost, freightTotal, 1);
-  const refreshReports = () => { setRefreshing(true); setProcessing(true); notifyReportsRefresh(); window.setTimeout(() => { setRefreshing(false); setProcessing(false); setNotice("Todos os relatórios foram atualizados com a base mais recente."); window.location.reload(); }, 700); };
-  return <div className="app-shell"><Sidebar /><main className="main-content"><header className="topbar"><div className="breadcrumbs"><span>Operação</span><span>/</span><strong>Importar arquivos</strong></div><div className="topbar-actions"><span className="last-sync"><span className="sync-dot" /> Base local · agora</span><button className="topbar-avatar">RC</button></div></header><div className="content-wrap">{processing && <div className="processing-banner"><LoaderCircle size={17} className="spin" /><span>Processando a base e atualizando os relatórios...</span></div>}<section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> CENTRAL DE DADOS</div><h1>Importar <em>arquivos.</em></h1><p>Atualize as bases de fretes e custos dos agregados da operação.</p></div></section>{notice && <div className="notice"><Check size={16} /><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}<div className="import-actions"><button className="outline-action" type="button" onClick={downloadAll}><Download size={16} /> Baixar arquivos importados</button><button className="outline-action" type="button" onClick={refreshReports} disabled={processing}>{refreshing ? <LoaderCircle size={16} className="spin" /> : <RefreshCw size={16} />} {refreshing ? "Atualizando relatórios..." : "Atualizar todos os relatórios"}</button></div><section className="import-grid"><div className="import-card"><div className="import-card-icon blue"><FileSpreadsheet size={20} /></div><div><span className="section-kicker">BASE DE RECEITA</span><h2>Arquivo dos fretes</h2><p>Planilha diária usada para calcular o faturado dos agregados.</p></div><label className="import-drop"><Upload size={18} /><strong>{freightFile || "Selecione a planilha de fretes"}</strong><span>CSV · substitui a base atual</span><input type="file" accept=".csv,text/csv" onChange={importFreights} /></label><button className="download-file-button" type="button" onClick={() => downloadFile("freights", "fretes")}><Download size={14} /> Baixar último arquivo</button></div><div className="import-card"><div className="import-card-icon amber"><Wallet size={20} /></div><div><span className="section-kicker">BASE DE CUSTO</span><h2>Custo dos agregados</h2><p>Planilha XLSX com km, valor do km, pedágio e frete total.</p></div><label className="import-drop"><Upload size={18} /><strong>{costFile || "Selecione a planilha de custos"}</strong><span>XLSX · {costRows.length ? `${costRows.length} lançamentos carregados` : "aguardando importação"}</span><input type="file" accept=".xlsx,.xls" onChange={importCosts} /></label><button className="download-file-button" type="button" onClick={() => downloadFile("costs", "custos dos agregados")}><Download size={14} /> Baixar último arquivo</button></div><div className="import-card"><div className="import-card-icon green"><FileSpreadsheet size={20} /></div><div><span className="section-kicker">BASE DE PEDÁGIO</span><h2>Arquivo de pedágio</h2><p>Planilha com placa do veículo na coluna D e valor da operação na coluna H.</p></div><label className="import-drop"><Upload size={18} /><strong>{pedagioFile || "Selecione a planilha de pedágio"}</strong><span>XLSX · {pedagioRows.length ? `${pedagioRows.length} operações identificadas` : "aguardando importação"}</span><input type="file" accept=".xlsx,.xls" onChange={importPedagio} /></label><button className="download-file-button" type="button" onClick={() => downloadFile("tolls", "pedágio")}><Download size={14} /> Baixar último arquivo</button></div><div className="import-card"><div className="import-card-icon violet"><FileSpreadsheet size={20} /></div><div><span className="section-kicker">BASE DE TERCEIROS</span><h2>Arquivo de Terceiros</h2><p>CSV SSW com a relação de CTRBs emitidos, placas, rotas e valores.</p></div><label className="import-drop"><Upload size={18} /><strong>{thirdPartyFile || "Selecione o CSV de Terceiros"}</strong><span>CSV · {thirdPartyRows.length ? `${thirdPartyRows.length} registros carregados` : "aguardando importação"}</span><input type="file" accept=".csv,text/csv" onChange={importThirdParties} /></label><button className="download-file-button" type="button" onClick={() => downloadFile("third-parties", "Terceiros")}><Download size={14} /> Baixar último arquivo</button></div></section><div className="data-note"><Check size={15} /> {totalKm.toLocaleString("pt-BR")} km lidos na base de custos · Importações ficam salvas neste navegador.</div></div></main></div>;
+  const [freightFile, setFreightFile] = useState(
+    () =>
+      localStorage.getItem("rotaclara-fretes-name") ||
+      (localStorage.getItem("rotaclara-csv") ? "bd.csv" : "bd.csv")
+  );
+  const [costFile, setCostFile] = useState(
+    localStorage.getItem("rotaclara-costs-name") || ""
+  );
+  const [pedagioFile, setPedagioFile] = useState(
+    localStorage.getItem("rotaclara-pedagio-name") || ""
+  );
+  const [pedagioRows, setPedagioRows] = useState<TollRow[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rotaclara-pedagio") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [thirdPartyFile, setThirdPartyFile] = useState(
+    localStorage.getItem("rotaclara-terceiros-name") || ""
+  );
+  const [thirdPartyRows, setThirdPartyRows] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rotaclara-terceiros") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [costRows, setCostRows] = useState<CostRow[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rotaclara-costs") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [freightTotal, setFreightTotal] = useState(() => {
+    const raw = localStorage.getItem("rotaclara-csv");
+    return raw
+      ? readFreightValue(raw)
+      : num(localStorage.getItem("rotaclara-aggregate-billed") || "156078.79");
+  });
+  const [notice, setNotice] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const downloadBlob = (content: BlobPart, name: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const rowsCsv = (rows: Record<string, unknown>[]) => {
+    if (!rows.length) return "";
+    const keys = Array.from(new Set(rows.flatMap(row => Object.keys(row))));
+    const quote = (value: unknown) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+    return [
+      keys.join(";"),
+      ...rows.map(row => keys.map(key => quote(row[key])).join(";")),
+    ].join("\n");
+  };
+  const downloadFile = async (key: string, label: string) => {
+    const aliases =
+      key === "tolls"
+        ? ["tolls", "pedagio"]
+        : key === "third-parties"
+          ? ["third-parties", "terceiros"]
+          : [key];
+    let ok = false;
+    for (const alias of aliases) {
+      if (await downloadImportedFile(alias)) {
+        ok = true;
+        break;
+      }
+    }
+    if (ok) {
+      setNotice(`Download iniciado: ${label}`);
+      return;
+    }
+    if (key === "tolls" && pedagioRows.length) {
+      downloadBlob(
+        rowsCsv(pedagioRows as unknown as Record<string, unknown>[]),
+        pedagioFile || "pedagio.csv",
+        "text/csv;charset=utf-8"
+      );
+      setNotice(`Download dos dados persistidos iniciado: ${label}`);
+      return;
+    }
+    if (key === "third-parties" && thirdPartyRows.length) {
+      downloadBlob(
+        rowsCsv(thirdPartyRows as unknown as Record<string, unknown>[]),
+        thirdPartyFile || "terceiros.csv",
+        "text/csv;charset=utf-8"
+      );
+      setNotice(`Download dos dados persistidos iniciado: ${label}`);
+      return;
+    }
+    if (key === "freights") {
+      const raw = await loadFreightRaw();
+      if (raw) {
+        downloadBlob(
+          raw,
+          freightFile || "fretes.csv",
+          "text/csv;charset=utf-8"
+        );
+        setNotice(`Download iniciado: ${label}`);
+        return;
+      }
+    }
+    if (key === "costs" && costRows.length) {
+      downloadBlob(
+        rowsCsv(costRows as unknown as Record<string, unknown>[]),
+        costFile || "custos.csv",
+        "text/csv;charset=utf-8"
+      );
+      setNotice(`Download dos dados persistidos iniciado: ${label}`);
+      return;
+    }
+    setNotice(
+      `O arquivo de ${label} ainda não está disponível. Importe novamente para habilitar o download original.`
+    );
+  };
+  const downloadAll = async () => {
+    for (const [key, label] of [
+      ["freights", "fretes"],
+      ["costs", "custos dos agregados"],
+      ["tolls", "pedágio"],
+      ["third-parties", "Terceiros"],
+    ] as const)
+      await downloadFile(key, label);
+    setNotice("Downloads dos arquivos disponíveis foram iniciados.");
+  };
+  useEffect(() => {
+    const existing = localStorage.getItem("rotaclara-csv");
+    if (existing) {
+      const total = readFreightValue(existing);
+      localStorage.setItem("rotaclara-aggregate-billed", String(total));
+      setFreightFile(localStorage.getItem("rotaclara-fretes-name") || "bd.csv");
+      setFreightTotal(total);
+      return;
+    }
+    fetch("/manus-storage/bd_457495e8.csv")
+      .then(r => r.text())
+      .then(raw => {
+        const total = readFreightValue(raw);
+        localStorage.setItem("rotaclara-csv", raw);
+        localStorage.setItem("rotaclara-fretes-name", "bd.csv");
+        localStorage.setItem("rotaclara-aggregate-billed", String(total));
+        setFreightFile("bd.csv");
+        setFreightTotal(total);
+      })
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    const source = "/manus-storage/FRETES_FIORINO_210c2b0f.xlsx";
+    const existing = localStorage.getItem("rotaclara-costs");
+    const sourceKnown = localStorage.getItem("rotaclara-costs-source");
+    if (existing && sourceKnown && sourceKnown !== source) return;
+    fetch(source)
+      .then(r => r.blob())
+      .then(async blob => {
+        const parsed = await readCosts(new File([blob], "FRETES_FIORINO.xlsx"));
+        if (parsed.length) {
+          localStorage.setItem("rotaclara-costs", JSON.stringify(parsed));
+          localStorage.setItem("rotaclara-costs-name", "FRETES_FIORINO.xlsx");
+          localStorage.setItem("rotaclara-costs-source", source);
+          setCostRows(parsed);
+          setCostFile("FRETES_FIORINO.xlsx");
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+  const importFreights = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const raw = String(reader.result || "");
+        const storage = await saveFreightRaw(raw);
+        await saveImportedFile("freights", file);
+        localStorage.setItem("rotaclara-fretes-name", file.name);
+        const total = readFreightValue(raw);
+        localStorage.setItem("rotaclara-aggregate-billed", String(total));
+        setFreightFile(file.name);
+        setFreightTotal(total);
+        setNotice(
+          `Fretes importados: ${file.name} (${storage === "indexeddb" ? "base grande salva com segurança" : "base salva"})`
+        );
+      } catch {
+        setNotice(
+          "Não foi possível salvar o arquivo. Libere espaço do navegador e tente novamente."
+        );
+      }
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+  const importCosts = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const parsed = await readCosts(file);
+    await saveImportedFile("costs", file);
+    localStorage.setItem("rotaclara-costs", JSON.stringify(parsed));
+    localStorage.setItem("rotaclara-costs-name", file.name);
+    localStorage.setItem("rotaclara-costs-source", `manual:${file.name}`);
+    setCostRows(parsed);
+    setCostFile(file.name);
+    setNotice(`Custos importados: ${file.name}`);
+  };
+  const importPedagio = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const parsed = await readPedagio(file);
+    await saveImportedFile("tolls", file);
+    localStorage.setItem("rotaclara-pedagio", JSON.stringify(parsed));
+    localStorage.setItem("rotaclara-pedagio-name", file.name);
+    setPedagioRows(parsed);
+    setPedagioFile(file.name);
+    setNotice(`Pedágio importado: ${file.name}`);
+  };
+  const importThirdParties = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const parsed = parseThirdPartyCsv(String(reader.result || ""));
+      if (!parsed.length) {
+        setNotice(
+          "Não foi possível identificar registros de Terceiros neste arquivo."
+        );
+        return;
+      }
+      await saveImportedFile("third-parties", file);
+      localStorage.setItem("rotaclara-terceiros", JSON.stringify(parsed));
+      localStorage.setItem("rotaclara-terceiros-name", file.name);
+      setThirdPartyRows(parsed);
+      setThirdPartyFile(file.name);
+      setNotice(`Terceiros importados: ${file.name}`);
+    };
+    reader.readAsText(file, "windows-1252");
+  };
+  const totalCost = costRows.reduce((s, r) => s + r.cost, 0);
+  const profit = freightTotal - totalCost;
+  const totalKm = costRows.reduce((s, r) => s + r.km, 0);
+  const days = useMemo(
+    () =>
+      Array.from(new Set(costRows.map(r => r.date)))
+        .sort()
+        .slice(0, 14),
+    [costRows]
+  );
+  const daily = days.map(date => ({
+    date,
+    cost: costRows.filter(r => r.date === date).reduce((s, r) => s + r.cost, 0),
+    km: costRows.filter(r => r.date === date).reduce((s, r) => s + r.km, 0),
+  }));
+  const max = Math.max(totalCost, freightTotal, 1);
+  const refreshReports = () => {
+    setRefreshing(true);
+    setProcessing(true);
+    notifyReportsRefresh();
+    window.setTimeout(() => {
+      setRefreshing(false);
+      setProcessing(false);
+      setNotice(
+        "Todos os relatórios foram atualizados com a base mais recente."
+      );
+      window.location.reload();
+    }, 700);
+  };
+  return (
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        <header className="topbar">
+          <div className="breadcrumbs">
+            <span>Operação</span>
+            <span>/</span>
+            <strong>Importar arquivos</strong>
+          </div>
+          <div className="topbar-actions">
+            <span className="last-sync">
+              <span className="sync-dot" /> Base local · agora
+            </span>
+            <button className="topbar-avatar">RC</button>
+          </div>
+        </header>
+        <div className="content-wrap">
+          {processing && (
+            <div className="processing-banner">
+              <LoaderCircle size={17} className="spin" />
+              <span>Processando a base e atualizando os relatórios...</span>
+            </div>
+          )}
+          <section className="page-heading">
+            <div>
+              <div className="eyebrow">
+                <span className="eyebrow-line" /> CENTRAL DE DADOS
+              </div>
+              <h1>
+                Importar <em>arquivos.</em>
+              </h1>
+              <p>
+                Atualize as bases de fretes e custos dos agregados da operação.
+              </p>
+            </div>
+          </section>
+          {notice && (
+            <div className="notice">
+              <Check size={16} />
+              <span>{notice}</span>
+              <button onClick={() => setNotice("")}>×</button>
+            </div>
+          )}
+          <div className="import-actions">
+            <button
+              className="outline-action"
+              type="button"
+              onClick={downloadAll}
+            >
+              <Download size={16} /> Baixar arquivos importados
+            </button>
+            <button
+              className="outline-action"
+              type="button"
+              onClick={refreshReports}
+              disabled={processing}
+            >
+              {refreshing ? (
+                <LoaderCircle size={16} className="spin" />
+              ) : (
+                <RefreshCw size={16} />
+              )}{" "}
+              {refreshing
+                ? "Atualizando relatórios..."
+                : "Atualizar todos os relatórios"}
+            </button>
+          </div>
+          <section className="import-grid">
+            <div className="import-card">
+              <div className="import-card-icon blue">
+                <FileSpreadsheet size={20} />
+              </div>
+              <div>
+                <span className="section-kicker">BASE DE RECEITA</span>
+                <h2>Arquivo dos fretes</h2>
+                <p>
+                  Planilha diária usada para calcular o faturado dos agregados.
+                </p>
+              </div>
+              <label className="import-drop">
+                <Upload size={18} />
+                <strong>
+                  {freightFile || "Selecione a planilha de fretes"}
+                </strong>
+                <span>CSV · substitui a base atual</span>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={importFreights}
+                />
+              </label>
+              <button
+                className="download-file-button"
+                type="button"
+                onClick={() => downloadFile("freights", "fretes")}
+              >
+                <Download size={14} /> Baixar último arquivo
+              </button>
+            </div>
+            <div className="import-card">
+              <div className="import-card-icon amber">
+                <Wallet size={20} />
+              </div>
+              <div>
+                <span className="section-kicker">BASE DE CUSTO</span>
+                <h2>Custo dos agregados</h2>
+                <p>Planilha XLSX com km, valor do km, pedágio e frete total.</p>
+              </div>
+              <label className="import-drop">
+                <Upload size={18} />
+                <strong>{costFile || "Selecione a planilha de custos"}</strong>
+                <span>
+                  XLSX ·{" "}
+                  {costRows.length
+                    ? `${costRows.length} lançamentos carregados`
+                    : "aguardando importação"}
+                </span>
+                <input type="file" accept=".xlsx,.xls" onChange={importCosts} />
+              </label>
+              <button
+                className="download-file-button"
+                type="button"
+                onClick={() => downloadFile("costs", "custos dos agregados")}
+              >
+                <Download size={14} /> Baixar último arquivo
+              </button>
+            </div>
+            <div className="import-card">
+              <div className="import-card-icon green">
+                <FileSpreadsheet size={20} />
+              </div>
+              <div>
+                <span className="section-kicker">BASE DE PEDÁGIO</span>
+                <h2>Arquivo de pedágio</h2>
+                <p>
+                  Planilha com placa do veículo na coluna D e valor da operação
+                  na coluna H.
+                </p>
+              </div>
+              <label className="import-drop">
+                <Upload size={18} />
+                <strong>
+                  {pedagioFile || "Selecione a planilha de pedágio"}
+                </strong>
+                <span>
+                  XLSX ·{" "}
+                  {pedagioRows.length
+                    ? `${pedagioRows.length} operações identificadas`
+                    : "aguardando importação"}
+                </span>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={importPedagio}
+                />
+              </label>
+              <button
+                className="download-file-button"
+                type="button"
+                onClick={() => downloadFile("tolls", "pedágio")}
+              >
+                <Download size={14} /> Baixar último arquivo
+              </button>
+            </div>
+            <div className="import-card">
+              <div className="import-card-icon violet">
+                <FileSpreadsheet size={20} />
+              </div>
+              <div>
+                <span className="section-kicker">BASE DE TERCEIROS</span>
+                <h2>Arquivo de Terceiros</h2>
+                <p>
+                  CSV SSW com a relação de CTRBs emitidos, placas, rotas e
+                  valores.
+                </p>
+              </div>
+              <label className="import-drop">
+                <Upload size={18} />
+                <strong>
+                  {thirdPartyFile || "Selecione o CSV de Terceiros"}
+                </strong>
+                <span>
+                  CSV ·{" "}
+                  {thirdPartyRows.length
+                    ? `${thirdPartyRows.length} registros carregados`
+                    : "aguardando importação"}
+                </span>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={importThirdParties}
+                />
+              </label>
+              <button
+                className="download-file-button"
+                type="button"
+                onClick={() => downloadFile("third-parties", "Terceiros")}
+              >
+                <Download size={14} /> Baixar último arquivo
+              </button>
+            </div>
+          </section>
+          <div className="data-note">
+            <Check size={15} /> {totalKm.toLocaleString("pt-BR")} km lidos na
+            base de custos · Importações ficam salvas neste navegador.
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
