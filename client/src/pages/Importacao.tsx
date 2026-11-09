@@ -391,6 +391,7 @@ export default function Importacao() {
     localStorage.setItem("rotaclara-costs-source", `manual:${file.name}`);
     setCostRows(parsed);
     setCostFile(file.name);
+    notifyReportsRefresh();
     setNotice(`Custos importados: ${file.name}`);
   };
   const importPedagio = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -421,6 +422,7 @@ export default function Importacao() {
       localStorage.setItem("rotaclara-terceiros-name", file.name);
       setThirdPartyRows(parsed);
       setThirdPartyFile(file.name);
+      notifyReportsRefresh();
       setNotice(`Terceiros importados: ${file.name}`);
     };
     reader.readAsText(file, "windows-1252");

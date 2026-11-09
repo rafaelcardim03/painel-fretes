@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { loadFreightRaw } from "@/lib/freightStorage";
+import { ThirdPartyRow } from "@/lib/terceiros";
 
 type Row = {
   date: string;
@@ -162,9 +163,11 @@ export default function GestaoOperacional() {
         .filter(Boolean),
     []
   );
-  const costRows = useMemo(
-    () => readJson<CostRow[]>("rotaclara-costs", []),
-    []
+  const [costRows, setCostRows] = useState<CostRow[]>(() =>
+    readJson<CostRow[]>("rotaclara-costs", [])
+  );
+  const [thirdRows, setThirdRows] = useState<ThirdPartyRow[]>(() =>
+    readJson<ThirdPartyRow[]>("rotaclara-terceiros", [])
   );
   const costPlates = useMemo(
     () => new Set(costRows.map(item => plate(item.plate)).filter(Boolean)),
@@ -206,10 +209,20 @@ export default function GestaoOperacional() {
   };
   useEffect(() => {
     void load();
+    const refreshBases = () => {
+      setCostRows(readJson<CostRow[]>("rotaclara-costs", []));
+      setThirdRows(readJson<ThirdPartyRow[]>("rotaclara-terceiros", []));
+    };
+    window.addEventListener("rotaclara-reports-refresh", refreshBases);
+    window.addEventListener("storage", refreshBases);
     const onFullscreen = () =>
       setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", onFullscreen);
-    return () => document.removeEventListener("fullscreenchange", onFullscreen);
+    return () => {
+      window.removeEventListener("rotaclara-reports-refresh", refreshBases);
+      window.removeEventListener("storage", refreshBases);
+      document.removeEventListener("fullscreenchange", onFullscreen);
+    };
   }, []);
   const monthRows = useMemo(
     () => rows.filter(row => row.date.startsWith(month)),
@@ -243,9 +256,16 @@ export default function GestaoOperacional() {
         !row.vehicleCandidates.some(vehicle => costPlates.has(vehicle))
     )
     .reduce((sum, row) => sum + row.value, 0);
-  const thirdPartyCost = costRows
-    .filter(row => String(row.date || "").startsWith(month))
-    .reduce((sum, row) => sum + Number(row.cost || 0), 0);
+  const periodCostRows = costRows.filter(row =>
+    String(row.date || "").startsWith(month)
+  );
+  const costBaseTotal = (
+    periodCostRows.length ? periodCostRows : costRows
+  ).reduce((sum, row) => sum + Number(row.cost || 0), 0);
+  const ctrbFallbackTotal = thirdRows
+    .filter(row => !month || isoDate(row.emissao).startsWith(month))
+    .reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const thirdPartyCost = costBaseTotal || ctrbFallbackTotal;
   const rate = thirdPartyRevenue
     ? (thirdPartyCost / thirdPartyRevenue) * 100
     : null;
