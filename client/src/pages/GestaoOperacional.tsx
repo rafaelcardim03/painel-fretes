@@ -262,10 +262,13 @@ export default function GestaoOperacional() {
   const costBaseTotal = (
     periodCostRows.length ? periodCostRows : costRows
   ).reduce((sum, row) => sum + Number(row.cost || 0), 0);
-  const ctrbFallbackTotal = thirdRows
-    .filter(row => !month || isoDate(row.emissao).startsWith(month))
-    .reduce((sum, row) => sum + Number(row.total || 0), 0);
-  const thirdPartyCost = costBaseTotal || ctrbFallbackTotal;
+  const periodThirdRows = thirdRows.filter(row =>
+    isoDate(row.emissao).startsWith(month)
+  );
+  const ctrbLiquidTotal = (
+    periodThirdRows.length ? periodThirdRows : thirdRows
+  ).reduce((sum, row) => sum + Number(row.liquid || row.total || 0), 0);
+  const thirdPartyCost = ctrbLiquidTotal || costBaseTotal;
   const rate = thirdPartyRevenue
     ? (thirdPartyCost / thirdPartyRevenue) * 100
     : null;
