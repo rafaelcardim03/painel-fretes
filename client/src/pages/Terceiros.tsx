@@ -7,11 +7,7 @@ import {
   Search,
   Wallet,
 } from "lucide-react";
-import {
-  bundledNovemberThirdPartyRows,
-  parseThirdPartyCsv,
-  ThirdPartyRow,
-} from "@/lib/terceiros";
+import { bundledNovemberThirdPartyRows, ThirdPartyRow } from "@/lib/terceiros";
 import { loadFreightRaw } from "@/lib/freightStorage";
 
 import Sidebar from "@/components/Sidebar";
@@ -126,17 +122,6 @@ export default function Terceiros() {
       setRows(bundledNovemberThirdPartyRows);
       setMonth("");
     }
-    fetch("/manus-storage/ctrbnovembro_38103e60.csv")
-      .then(response => (response.ok ? response.text() : ""))
-      .then(raw => {
-        const parsed = raw ? parseThirdPartyCsv(raw) : [];
-        if (alive && parsed.length) {
-          localStorage.setItem("rotaclara-terceiros", JSON.stringify(parsed));
-          localStorage.setItem("rotaclara-terceiros-name", "ctrbnovembro.csv");
-          setRows(parsed);
-        }
-      })
-      .catch(() => undefined);
     loadFreightRaw()
       .then(raw => {
         if (alive && raw) setReceiptRaw(raw);
@@ -236,7 +221,7 @@ export default function Terceiros() {
     [rows, receiptRows]
   );
   useEffect(() => {
-    if (!month && availableMonths.length)
+    if ((!month || !availableMonths.includes(month)) && availableMonths.length)
       setMonth(availableMonths[availableMonths.length - 1]);
   }, [availableMonths, month]);
   const inPeriod = (date: string) => !month || monthKey(date) === month;
