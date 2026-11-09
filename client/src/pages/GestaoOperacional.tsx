@@ -10,7 +10,11 @@ import {
   YAxis,
 } from "recharts";
 import { loadFreightRaw } from "@/lib/freightStorage";
-import { ThirdPartyRow } from "@/lib/terceiros";
+import {
+  bundledNovemberThirdPartyRows,
+  parseThirdPartyCsv,
+  ThirdPartyRow,
+} from "@/lib/terceiros";
 
 type Row = {
   date: string;
@@ -213,6 +217,26 @@ export default function GestaoOperacional() {
       setCostRows(readJson<CostRow[]>("rotaclara-costs", []));
       setThirdRows(readJson<ThirdPartyRow[]>("rotaclara-terceiros", []));
     };
+    if (!localStorage.getItem("rotaclara-ctrbnovembro-seeded")) {
+      localStorage.setItem(
+        "rotaclara-terceiros",
+        JSON.stringify(bundledNovemberThirdPartyRows)
+      );
+      localStorage.setItem("rotaclara-terceiros-name", "ctrbnovembro.csv");
+      localStorage.setItem("rotaclara-ctrbnovembro-seeded", "true");
+      setThirdRows(bundledNovemberThirdPartyRows);
+    }
+    fetch("/manus-storage/ctrbnovembro_38103e60.csv")
+      .then(response => (response.ok ? response.text() : ""))
+      .then(raw => {
+        const parsed = raw ? parseThirdPartyCsv(raw) : [];
+        if (parsed.length) {
+          localStorage.setItem("rotaclara-terceiros", JSON.stringify(parsed));
+          localStorage.setItem("rotaclara-terceiros-name", "ctrbnovembro.csv");
+          setThirdRows(parsed);
+        }
+      })
+      .catch(() => undefined);
     window.addEventListener("rotaclara-reports-refresh", refreshBases);
     window.addEventListener("storage", refreshBases);
     const onFullscreen = () =>

@@ -7,7 +7,11 @@ import {
   Search,
   Wallet,
 } from "lucide-react";
-import { parseThirdPartyCsv, ThirdPartyRow } from "@/lib/terceiros";
+import {
+  bundledNovemberThirdPartyRows,
+  parseThirdPartyCsv,
+  ThirdPartyRow,
+} from "@/lib/terceiros";
 import { loadFreightRaw } from "@/lib/freightStorage";
 
 import Sidebar from "@/components/Sidebar";
@@ -112,6 +116,27 @@ export default function Terceiros() {
   const [loadingBase, setLoadingBase] = useState(true);
   useEffect(() => {
     let alive = true;
+    if (!localStorage.getItem("rotaclara-ctrbnovembro-seeded")) {
+      localStorage.setItem(
+        "rotaclara-terceiros",
+        JSON.stringify(bundledNovemberThirdPartyRows)
+      );
+      localStorage.setItem("rotaclara-terceiros-name", "ctrbnovembro.csv");
+      localStorage.setItem("rotaclara-ctrbnovembro-seeded", "true");
+      setRows(bundledNovemberThirdPartyRows);
+      setMonth("");
+    }
+    fetch("/manus-storage/ctrbnovembro_38103e60.csv")
+      .then(response => (response.ok ? response.text() : ""))
+      .then(raw => {
+        const parsed = raw ? parseThirdPartyCsv(raw) : [];
+        if (alive && parsed.length) {
+          localStorage.setItem("rotaclara-terceiros", JSON.stringify(parsed));
+          localStorage.setItem("rotaclara-terceiros-name", "ctrbnovembro.csv");
+          setRows(parsed);
+        }
+      })
+      .catch(() => undefined);
     loadFreightRaw()
       .then(raw => {
         if (alive && raw) setReceiptRaw(raw);
